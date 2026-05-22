@@ -180,7 +180,7 @@
     <div id="main-menu" class="overlay">
         <h1>Mighty Runner</h1>
         <div style="margin-bottom: 40px; font-size: 24px; line-height: 1.6; text-align: center; text-shadow: 0 3px 6px #000;">
-            Controls:<br>Arrows / WASD to move<br>Space / Up to jump
+            Controls:<br>Arrows / WASD to move<br>Down to Crouch / Fast Fall<br>Space / Up to jump<br>F / X to Attack
         </div>
         <button class="btn" id="start-btn">START GAME</button>
         <div style="font-size: 20px; margin-top: 30px;" id="high-score-display">HIGH SCORE: 0</div>
@@ -200,9 +200,11 @@
     <div id="mobile-controls">
         <div class="control-group">
             <div class="control-btn" id="btn-left">◀</div>
+            <div class="control-btn" id="btn-down">▼</div>
             <div class="control-btn" id="btn-right">▶</div>
         </div>
         <div class="control-group">
+            <div class="control-btn" id="btn-attack" style="background-color: rgba(231, 76, 60, 0.5); border-color: #ff7979;">⚔️</div>
             <div class="control-btn" id="btn-jump">▲</div>
         </div>
     </div>
@@ -255,22 +257,29 @@
     resizeCanvas();
 
     // Input Handling
-    const keys = { left: false, right: false, up: false };
+    const keys = { left: false, right: false, up: false, down: false, attack: false };
 
     window.addEventListener('keydown', (e) => {
         if(gameState !== 'playing') return;
         if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
         if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+        if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = true;
         if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
             if(!keys.up && player) player.jump();
             keys.up = true;
+        }
+        if (e.code === 'KeyF' || e.code === 'KeyX' || e.code === 'Enter') {
+            if(!keys.attack && player) player.attack();
+            keys.attack = true;
         }
     });
 
     window.addEventListener('keyup', (e) => {
         if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
         if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+        if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = false;
         if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = false;
+        if (e.code === 'KeyF' || e.code === 'KeyX' || e.code === 'Enter') keys.attack = false;
     });
 
     // Touch Controls
@@ -280,36 +289,45 @@
             mobileControls.style.display = 'flex';
             const btnLeft = document.getElementById('btn-left');
             const btnRight = document.getElementById('btn-right');
+            const btnDown = document.getElementById('btn-down');
             const btnJump = document.getElementById('btn-jump');
+            const btnAttack = document.getElementById('btn-attack');
 
             const addTouch = (elem, key) => {
-                elem.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; if(key === 'up' && player) player.jump(); });
+                elem.addEventListener('touchstart', (e) => { 
+                    e.preventDefault(); 
+                    keys[key] = true; 
+                    if(key === 'up' && player) player.jump(); 
+                    if(key === 'attack' && player) player.attack();
+                });
                 elem.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
             };
 
             addTouch(btnLeft, 'left');
             addTouch(btnRight, 'right');
+            addTouch(btnDown, 'down');
             addTouch(btnJump, 'up');
+            addTouch(btnAttack, 'attack');
         }
     }
     setupTouchControls();
 
     const levelMap = [
-        "                                                                                                    ",
-        "                                                                                                    ",
-        "                                                                                                  6 ",
-        "                                                                                                  5 ",
-        "                                                                                                  5 ",
-        "                                                                                                  5 ",
-        "                     222                                                    2 2 2                 5 ",
-        "                                                                                                  5 ",
-        "                                       33                                                         5 ",
-        "           21212                       44                                            33           5 ",
-        "                                       44                                            44           5 ",
-        "                                       44               33          1111             44           5 ",
-        "                                       44               44                           44           5 ",
-        "1111111111111111111111111   111111111111111111111111111111  11111111      11111111111111111111111111",
-        "1111111111111111111111111   111111111111111111111111111111  11111111      11111111111111111111111111"
+        "                                                                                                                                                                                                        ",
+        "                                                                                                                                                                                                        ",
+        "                                                                                                                                                                                                      6 ",
+        "                                                                                                                                                                                                      5 ",
+        "                                                                                                                                                                                                      5 ",
+        "                                                                                                                                                                                                      5 ",
+        "                                                                                                                                                                                                      5 ",
+        "                                                                                                                                                                                                      5 ",
+        "                                       88                                                         888                                           88                                                    5 ",
+        "           88                          88                                            88           888                                           88                                        88          5 ",
+        "           88                          88                                            88           888                                           88                                        88          5 ",
+        "           88           888            88        9                  8888             88           888             8888                      88888             8888                    88          5 ",
+        "           88           888            88                           8888             88   9       888      9      8888          9           88888             8888        9           88          5 ",
+        "111111111111111111111777111111111111111111111111111777771111111111111111111111111111111111111111111111111177711111111111111111111111111117777111111111111111111111111111111111111111111111111111111111",
+        "111111111111111111111777111111111111111111111111111777771111111111111111111111111111111111111111111111111177711111111111111111111111111117777111111111111111111111111111111111111111111111111111111111"
     ];
 
     let mapWidth = levelMap[0].length * TILE_SIZE;
@@ -389,14 +407,7 @@
         }
         
         hit() {
-            if (this.type === '2' && this.active) {
-                this.active = false;
-                this.bouncing = true;
-                coinsList.push(new Coin(this.x + 20, this.y - TILE_SIZE, true));
-                score += 100;
-                particles.push(new Particle(this.x, this.y - 50, null, 'text'));
-                setTimeout(() => { this.bouncing = false; this.bounceY = 0; }, 100);
-            } else if (this.type === '1') {
+            if (this.type === '1') {
                 this.bouncing = true;
                 setTimeout(() => { this.bouncing = false; this.bounceY = 0; }, 100);
                 spawnParticles(this.x + 40, this.y + 40, '#d35400', 6);
@@ -424,37 +435,6 @@
                 ctx.strokeStyle = '#a04000';
                 ctx.lineWidth = 5;
                 ctx.stroke();
-            } else if (this.type === '2') {
-                let grad = ctx.createLinearGradient(drawX, drawY, drawX, drawY + this.h);
-                grad.addColorStop(0, this.active ? '#f1c40f' : '#95a5a6');
-                grad.addColorStop(1, this.active ? '#f39c12' : '#7f8c8d');
-                ctx.fillStyle = grad;
-                ctx.beginPath();
-                ctx.roundRect(drawX, drawY, this.w, this.h, 16);
-                ctx.fill();
-                
-                if (this.active) {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.font = 'bold 50px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.fillText("?", drawX + this.w/2, drawY + this.h/2 + 18);
-                    ctx.textAlign = 'left';
-                }
-            } else if (this.type === '3') { // Pipe Top
-                ctx.fillStyle = '#2ecc71';
-                ctx.beginPath();
-                ctx.roundRect(drawX - 10, drawY, this.w + 20, this.h, 16);
-                ctx.fill();
-                ctx.strokeStyle = '#27ae60';
-                ctx.lineWidth = 5;
-                ctx.stroke();
-            } else if (this.type === '4') { // Pipe Body
-                let grad = ctx.createLinearGradient(drawX, drawY, drawX + this.w, drawY);
-                grad.addColorStop(0, '#27ae60');
-                grad.addColorStop(0.5, '#2ecc71');
-                grad.addColorStop(1, '#27ae60');
-                ctx.fillStyle = grad;
-                ctx.fillRect(drawX, drawY, this.w, this.h);
             } else if (this.type === '5') { // Flag Pole
                 ctx.fillStyle = '#f1c40f';
                 ctx.fillRect(drawX + this.w/2 - 10, drawY, 20, this.h);
@@ -464,6 +444,59 @@
                 ctx.moveTo(drawX + this.w/2 - 10, drawY);
                 ctx.lineTo(drawX - 50, drawY + 40);
                 ctx.lineTo(drawX + this.w/2 - 10, drawY + 80);
+                ctx.fill();
+            } else if (this.type === '7') { // Duri / Spikes Bawah
+                ctx.fillStyle = '#bdc3c7';
+                ctx.beginPath();
+                ctx.moveTo(drawX, drawY + this.h);
+                ctx.lineTo(drawX + this.w/2, drawY + this.h/2);
+                ctx.lineTo(drawX + this.w, drawY + this.h);
+                ctx.fill();
+                ctx.strokeStyle = '#7f8c8d';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+            } else if (this.type === '8') { // Stone Pillar
+                ctx.fillStyle = '#95a5a6';
+                ctx.fillRect(drawX, drawY, this.w, this.h);
+                ctx.strokeStyle = '#7f8c8d';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(drawX, drawY, this.w, this.h);
+                // Garis batu bata
+                ctx.beginPath();
+                ctx.moveTo(drawX, drawY + this.h/2);
+                ctx.lineTo(drawX + this.w, drawY + this.h/2);
+                ctx.moveTo(drawX + this.w/2, drawY);
+                ctx.lineTo(drawX + this.w/2, drawY + this.h/2);
+                ctx.stroke();
+            } else if (this.type === '9') { // BOM
+                let cx = drawX + this.w/2;
+                let cy = drawY + this.h/2 + 10;
+                let radius = this.w/2 - 10;
+                
+                // Sumbu (Fuse)
+                ctx.strokeStyle = '#c0392b';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy - radius);
+                ctx.quadraticCurveTo(cx + 10, cy - radius - 15, cx + 20, cy - radius - 20);
+                ctx.stroke();
+                
+                // Percikan api (Spark)
+                ctx.fillStyle = '#f1c40f';
+                ctx.beginPath();
+                ctx.arc(cx + 20, cy - radius - 20, 6 + Math.random()*4, 0, Math.PI*2);
+                ctx.fill();
+
+                // Tubuh Bom
+                ctx.fillStyle = '#111';
+                ctx.beginPath();
+                ctx.arc(cx, cy, radius, 0, Math.PI*2);
+                ctx.fill();
+                
+                // Highlight bola bom
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.beginPath();
+                ctx.arc(cx - 8, cy - 8, radius/4, 0, Math.PI*2);
                 ctx.fill();
             }
             ctx.restore();
@@ -521,17 +554,38 @@
         }
     }
 
+    // --- DAFTAR KATA NEGATIF & WARNA MUSUH ---
+    const NEGATIVE_WORDS = [
+        "Melawan Orang Tua", "Berbicara Kasar", "Tidak Sopan",
+        "Tidak Disiplin", "Curang di Game", "Merusak Fasilitas",
+        "Suka Berbohong", "Suka Membully", "Sering Membolos",
+        "Malas Belajar", "Menyontek PR", "Suka Berkelahi"
+    ];
+
+    // --- TEMA WARNA TUA UNTUK BOLA & DURI ---
+    const ENEMY_THEMES = [
+        { base: '#1a1a1a', spikeLight: '#3d3d3d', spikeDark: '#0a0a0a' }, // Hitam
+        { base: '#800000', spikeLight: '#a52a2a', spikeDark: '#4d0000' }, // Merah Tua
+        { base: '#004d00', spikeLight: '#008000', spikeDark: '#003300' }, // Hijau Tua
+        { base: '#4a235a', spikeLight: '#633974', spikeDark: '#311432' }, // Ungu Tua
+        { base: '#000080', spikeLight: '#0000b3', spikeDark: '#00004d' }, // Biru Tua
+        { base: '#b38f00', spikeLight: '#d4ac0d', spikeDark: '#806600' }  // Kuning Tua
+    ];
+
     class Enemy {
-        constructor(x, y) {
+        constructor(x, y, word = "Malas", theme) {
             this.x = x;
             this.y = y;
-            this.w = 72; // Monster diperbesar
-            this.h = 72;
-            this.vx = -4.0; 
+            this.w = 320; // Bola Raksasa diperbesar 2x lipat
+            this.h = 320;
+            this.vx = -2.0; // Kecepatan bergerak/menggelinding diperlambat
             this.vy = 0;
             this.dead = false;
             this.deadTimer = 0;
-            this.color = '#e74c3c'; 
+            this.word = word;
+            this.theme = theme || ENEMY_THEMES[0];
+            this.color = this.theme.base;
+            this.rotation = 0;
         }
         
         update() {
@@ -544,8 +598,11 @@
             if (this.vy > TERMINAL_VELOCITY) this.vy = TERMINAL_VELOCITY;
             
             this.x += this.vx;
+            // Efek Rotasi saat menggelinding diperlambat
+            this.rotation += this.vx * 0.015; 
+
             for (let b of blocks) {
-                if (b.type === '5' || b.type === '6') continue; 
+                if (b.type !== '1' && b.type !== '8') continue; // Hanya nabrak rumput dan batu
                 if (checkCollision(this, b)) {
                     if (this.vx > 0) this.x = b.x - this.w;
                     else this.x = b.x + b.w;
@@ -556,7 +613,7 @@
             this.y += this.vy;
             let onGround = false;
             for (let b of blocks) {
-                if (b.type === '5' || b.type === '6') continue;
+                if (b.type !== '1' && b.type !== '8') continue;
                 if (checkCollision(this, b)) {
                     if (this.vy > 0) { 
                         this.y = b.y - this.h;
@@ -569,7 +626,7 @@
             if (onGround) {
                 let edgeCheckX = this.vx > 0 ? this.x + this.w : this.x;
                 let isBlockBelow = blocks.some(b => 
-                    b.type !== '5' && b.type !== '6' &&
+                    (b.type === '1' || b.type === '8') &&
                     edgeCheckX >= b.x && edgeCheckX <= b.x + b.w && 
                     this.y + this.h + 2 >= b.y && this.y + this.h <= b.y + b.h
                 );
@@ -579,11 +636,11 @@
         
         die() {
             this.dead = true;
-            this.h = 24;
-            this.y += 48; // Menyesuaikan dengan tinggi baru
+            this.h = 60; // Gencet jadi gepeng disesuaikan ukuran baru
+            this.y += 260; // Turunkan Y saat gepeng agar tetap di tanah
             score += 200;
-            particles.push(new Particle(this.x, this.y, null, 'text'));
-            spawnParticles(this.x + this.w/2, this.y, this.color, 18);
+            particles.push(new Particle(this.x + this.w/2, this.y, null, 'text'));
+            spawnParticles(this.x + this.w/2, this.y, this.color, 40);
         }
         
         draw() {
@@ -593,68 +650,163 @@
             let drawY = this.y - camera.y;
             
             ctx.save();
-            ctx.fillStyle = this.color;
             
+            // Pindah orientasi ke pusat musuh
+            ctx.translate(drawX + this.w/2, drawY + this.h/2);
+
             if (this.dead) {
-                ctx.beginPath();
-                ctx.ellipse(drawX + this.w/2, drawY + this.h/2, this.w/2, this.h/2, 0, 0, Math.PI*2);
-                ctx.fill();
-            } else {
-                let squeeze = Math.sin(Date.now() / 150) * 10;
-                ctx.beginPath();
-                ctx.moveTo(drawX, drawY + this.h);
-                ctx.quadraticCurveTo(drawX, drawY - squeeze, drawX + this.w/2, drawY - squeeze);
-                ctx.quadraticCurveTo(drawX + this.w, drawY - squeeze, drawX + this.w, drawY + this.h);
-                ctx.fill();
-                
-                // Mata proporsional
-                ctx.fillStyle = 'white';
-                let eyeOffset = this.vx > 0 ? 16 : -8; 
-                ctx.beginPath();
-                ctx.arc(drawX + this.w/2 + eyeOffset - 8, drawY + 30, 10, 0, Math.PI*2);
-                ctx.arc(drawX + this.w/2 + eyeOffset + 18, drawY + 30, 10, 0, Math.PI*2);
-                ctx.fill();
-                
-                // Pupil Hitam
-                ctx.fillStyle = 'black';
-                ctx.beginPath();
-                ctx.arc(drawX + this.w/2 + eyeOffset - 8 + (this.vx>0?4:-4), drawY + 30, 5, 0, Math.PI*2);
-                ctx.arc(drawX + this.w/2 + eyeOffset + 18 + (this.vx>0?4:-4), drawY + 30, 5, 0, Math.PI*2);
-                ctx.fill();
+                // Jika mati, gencet skala sumbu Y nya
+                ctx.scale(1, 0.3);
             }
+
+            // 1. Gambar Tubuh Bola Berduri (Ikut berputar seperti roda)
+            ctx.save();
+            if (!this.dead) ctx.rotate(this.rotation);
+            
+            let numSpikes = 6; // Menggunakan 6 duri agar menyebar rata
+            let radius = this.w / 2 - 45; // Radius bola inti
+            let spikeHeight = 45; // Panjang duri
+            let spikeBaseW = 55;  // Lebar bawah duri
+
+            // Menggambar Duri (Gaya Lipatan 3D Flat, menyesuaikan warna bola)
+            for (let i = 0; i < numSpikes; i++) {
+                ctx.save();
+                ctx.rotate((i * Math.PI * 2) / numSpikes);
+
+                // Setengah Duri Kiri (Warna Terang)
+                ctx.beginPath();
+                ctx.moveTo(0, -radius - spikeHeight); // Ujung Lancip
+                ctx.lineTo(-spikeBaseW/2, -radius + 5); // Kiri bawah
+                ctx.lineTo(0, -radius + 5); // Tengah bawah
+                ctx.fillStyle = this.theme.spikeLight;
+                ctx.fill();
+
+                // Setengah Duri Kanan (Warna Gelap/Bayangan)
+                ctx.beginPath();
+                ctx.moveTo(0, -radius - spikeHeight); // Ujung Lancip
+                ctx.lineTo(0, -radius + 5); // Tengah bawah
+                ctx.lineTo(spikeBaseW/2, -radius + 5); // Kanan bawah
+                ctx.fillStyle = this.theme.spikeDark;
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            // Menggambar Bola Inti (Warna Dasar Solid)
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI*2);
+            ctx.fillStyle = this.color; 
+            ctx.fill();
+
+            // Menambahkan Efek Volume Bayangan Sabit (Crescent Shadow) di bagian bawah bola
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.clip(); // Batasi gambar hanya di dalam lingkaran inti bola
+
+            ctx.beginPath();
+            ctx.arc(0, 0, radius, 0, Math.PI * 2);
+            ctx.arc(-20, -25, radius, 0, Math.PI * 2, true); // Potong bagian atas kiri
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; // Bayangan hitam transparan
+            ctx.fill('evenodd');
+            ctx.restore();
+            
+            ctx.restore(); // Hentikan rotasi agar teks tetap tegak
+
+            // 2. Gambar Teks Raksasa di Tengah Bola (Rapi & Tidak Gepeng)
+            if (!this.dead) {
+                let words = this.word.split(' ');
+                let lines = [];
+                
+                // Logika pembagian baris yang seragam
+                if (words.length === 1) lines.push(words[0]);
+                else if (words.length === 2) { lines.push(words[0]); lines.push(words[1]); }
+                else if (words.length === 3) { lines.push(words[0] + " " + words[1]); lines.push(words[2]); }
+                else {
+                    lines.push(words[0] + " " + words[1]);
+                    lines.push(words.slice(2).join(" "));
+                }
+                
+                // Font dibuat statis (selalu berukuran 48px), tidak akan gepeng menyempit
+                ctx.font = `bold 48px "Fredoka One", sans-serif`; 
+                ctx.fillStyle = 'white';
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 10; 
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                let lineHeight = 55;
+                let startY = -(lines.length - 1) * (lineHeight / 2);
+                
+                // Cetak setiap baris di posisi tengah yang harmonis
+                for(let j = 0; j < lines.length; j++) {
+                    ctx.strokeText(lines[j], 0, startY + j * lineHeight);
+                    ctx.fillText(lines[j], 0, startY + j * lineHeight);
+                }
+            }
+
             ctx.restore();
         }
     }
 
     class Player {
         constructor() {
-            // 3. UKURAN KARAKTER DIPERBESAR
-            this.w = 72; // Lebar
-            this.h = 100; // Tinggi
+            // 3. UKURAN KARAKTER DIPERBESAR (Sekarang 4x dari ukuran aslinya)
+            this.w = 288; // Lebar
+            this.originalH = 400; // Tinggi Asli
+            this.crouchH = 200; // Tinggi saat menunduk
+            this.h = this.originalH; 
+            this.walkCycle = 0; // Variabel penggerak animasi langkah
+            this.currentWalkAngle = 0; // Menyimpan sudut animasi berjalan saat ini
+            this.currentWalkBounce = 0; // Menyimpan tinggi pantulan saat ini
             
             // Menggunakan gambar URL Anda
             this.image = new Image();
-            this.image.src = 'https://raw.githubusercontent.com/CikguTere/Rule-Blaster/main/background_removal%23TUFIS1gyX2tMd28jMSM2Y2FmMjhhNTNhMzRiYzBiNTFlMTQ3ZGQxNmEyZTRmMCMxMjAwIyNUUkFOU0ZPUk1BVElPTl9SRVFVRVNU.png'; 
+            this.image.src = 'https://raw.githubusercontent.com/CikguTere/Rule-Blaster/main/magic_edit%23TUFIS1lPOEZtbTgjMSM3NmUyZTg4NmExZjBiY2VhYWYwNTIyMjI4MTNhODBlMCMxMTM4IyNUUkFOU0ZPUk1BVElPTl9SRVFVRVNU.png'; 
             
             this.reset();
         }
 
         reset() {
             this.x = 200;
-            this.y = 400;
+            this.y = 100; // Muncul lebih di atas agar tidak terjebak tanah awal
             this.vx = 0;
             this.vy = 0;
             this.onGround = false;
+            this.jumpCount = 0;
             this.isInvincible = false;
             this.invincibleTimer = 0;
             this.facingRight = true;
+            this.attackTimer = 0;
+            this.attackCooldown = 0;
+            this.isCrouching = false;
+            this.h = this.originalH;
+            this.dropTimer = 0;
+            this.ignoredBlocks = [];
+            this.walkCycle = 0; // Reset siklus langkah
+            this.currentWalkAngle = 0;
+            this.currentWalkBounce = 0;
+        }
+
+        attack() {
+            if (this.attackCooldown <= 0) {
+                this.attackTimer = 15; // Berapa frame tebasan aktif
+                this.attackCooldown = 30; // Jeda sebelum bisa menebas lagi
+                
+                // Efek partikel kecil saat mengayunkan pedang
+                spawnParticles(this.facingRight ? this.x + this.w : this.x, this.y + this.h/2, '#00ffff', 5);
+            }
         }
 
         jump() {
-            if (this.onGround) {
+            if (this.jumpCount < 2) {
                 this.vy = JUMP_FORCE;
                 this.onGround = false;
-                spawnParticles(this.x + this.w/2, this.y + this.h, '#fff', 12);
+                this.jumpCount++;
+                
+                // Efek partikel: Putih untuk lompatan pertama, Biru (Cyan) untuk double jump
+                let particleColor = this.jumpCount === 1 ? '#ffffff' : '#00ffff';
+                spawnParticles(this.x + this.w/2, this.y + this.h, particleColor, 15);
             }
         }
 
@@ -684,15 +836,89 @@
                 if (this.invincibleTimer <= 0) this.isInvincible = false;
             }
 
+            // Logika Serangan Pedang
+            if (this.attackCooldown > 0) this.attackCooldown--;
+            if (this.attackTimer > 0) {
+                this.attackTimer--;
+                
+                // Hitbox pedang diperbesar menutupi jarak yang luas
+                let attackReach = 280; 
+                let attackBox = {
+                    x: this.facingRight ? this.x + this.w : this.x - attackReach,
+                    y: this.y,
+                    w: attackReach,
+                    h: this.h 
+                };
+                
+                // Cek tabrakan pedang dengan musuh
+                for (let e of enemies) {
+                    if (!e.dead && checkCollision(attackBox, e)) {
+                        e.die();
+                        spawnParticles(e.x + e.w/2, e.y + e.h/2, '#00ffff', 15); // Efek tebasan kena
+                    }
+                }
+            }
+
             // Gravity
             this.vy += GRAVITY;
+            
+            // Logika Turun Cepat (Fast Fall) jika menekan Arrow Down di udara
+            if (keys.down && !this.onGround) {
+                this.vy += GRAVITY * 2.5; 
+            }
+            
             if (this.vy > TERMINAL_VELOCITY) this.vy = TERMINAL_VELOCITY;
 
-            // X Movement
-            if (keys.left) {
+            // X Movement & Logika Menunduk (Crouch) atau Turun (Drop Down)
+            if (keys.down && this.onGround) {
+                if (this.dropTimer <= 0) {
+                    // Cari pijakan saat ini
+                    let standingBlocks = blocks.filter(b => 
+                        (b.type === '1' || b.type === '8') && 
+                        this.x + 10 < b.x + b.w && this.x + this.w - 10 > b.x && 
+                        Math.abs((this.y + this.h) - b.y) <= 5
+                    );
+                    
+                    // Pastikan di bawah pijakan ini kosong (bukan tanah solid berlapis)
+                    let canDrop = standingBlocks.length > 0 && standingBlocks.every(sb => 
+                        !blocks.some(b2 => (b2.type === '1' || b2.type === '8') && b2.x === sb.x && b2.y === sb.y + TILE_SIZE)
+                    );
+
+                    if (canDrop) {
+                        this.dropTimer = 20; // Frame untuk menembus balok
+                        this.ignoredBlocks = standingBlocks;
+                        this.isCrouching = false; 
+                    } else {
+                        // Jika di bawahnya solid (lantai paling bawah), lakukan menunduk biasa
+                        this.isCrouching = true;
+                    }
+                } else {
+                    this.isCrouching = false;
+                }
+            } else {
+                this.isCrouching = false;
+            }
+
+            if (this.dropTimer > 0) {
+                this.dropTimer--;
+                if (this.dropTimer === 0) {
+                    this.ignoredBlocks = [];
+                }
+            }
+
+            // Ubah hitbox dan posisi Y saat menunduk
+            if (this.isCrouching && this.h === this.originalH) {
+                this.h = this.crouchH;
+                this.y += (this.originalH - this.crouchH);
+            } else if (!this.isCrouching && this.h === this.crouchH) {
+                this.h = this.originalH;
+                this.y -= (this.originalH - this.crouchH);
+            }
+
+            if (keys.left && !this.isCrouching) {
                 this.vx -= ACCELERATION;
                 this.facingRight = false;
-            } else if (keys.right) {
+            } else if (keys.right && !this.isCrouching) {
                 this.vx += ACCELERATION;
                 this.facingRight = true;
             } else {
@@ -712,7 +938,11 @@
                     levelComplete();
                     return;
                 }
-                if (b.type !== '5' && b.type !== '6' && checkCollision(this, b)) {
+                if ((b.type === '7' || b.type === '9') && checkCollision(this, b)) {
+                    this.die(); // Mati jika terkena jebakan duri atau BOM
+                }
+                if (this.ignoredBlocks.includes(b)) continue; // Tembus balok saat Drop Down
+                if ((b.type === '1' || b.type === '8') && checkCollision(this, b)) {
                     if (this.vx > 0) { 
                         this.x = b.x - this.w;
                         this.vx = 0;
@@ -728,11 +958,16 @@
             this.onGround = false;
 
             for (let b of blocks) {
-                if (b.type !== '5' && b.type !== '6' && checkCollision(this, b)) {
+                if ((b.type === '7' || b.type === '9') && checkCollision(this, b)) {
+                    this.die(); // Mati jika menginjak jebakan duri atau BOM
+                }
+                if (this.ignoredBlocks.includes(b)) continue; // Tembus balok saat Drop Down
+                if ((b.type === '1' || b.type === '8') && checkCollision(this, b)) {
                     if (this.vy > 0) { 
                         this.y = b.y - this.h;
                         this.vy = 0;
                         this.onGround = true;
+                        this.jumpCount = 0; // Reset double jump saat menyentuh tanah
                     } else if (this.vy < 0) { 
                         this.y = b.y + b.h;
                         this.vy = 0;
@@ -745,10 +980,11 @@
             for (let e of enemies) {
                 if (!e.dead && checkCollision(this, e)) {
                     if (this.vy > 0 && this.y + this.h < e.y + e.h / 2) {
-                        e.die();
+                        // Karakter hanya memantul seperti trampolin, BOLA TIDAK HANCUR saat diinjak
                         this.vy = JUMP_FORCE * 0.7; 
+                        this.jumpCount = 0; // Reset double jump saat menginjak musuh
                     } else {
-                        this.die();
+                        // Tidak ada pengurangan nyawa (Hanya menyentuh bola aman)
                     }
                 }
             }
@@ -776,45 +1012,138 @@
             let drawY = this.y - camera.y;
 
             ctx.save();
-            if (!this.facingRight) {
-                ctx.translate(drawX + this.w, drawY);
-                ctx.scale(-1, 1);
-                drawX = 0;
-                drawY = 0;
+            
+            // 0. LOGIKA ANIMASI MELANGKAH YANG DIPERHALUS (Smooth Procedural Animation)
+            let targetWalkAngle = 0;
+            let targetWalkBounce = 0;
+            
+            // Jika sedang di tanah, berlari, dan tidak sedang merunduk
+            if (this.onGround && Math.abs(this.vx) > 0.5 && !this.isCrouching) {
+                // Kecepatan putaran siklus menyesuaikan kecepatan lari
+                this.walkCycle += Math.abs(this.vx) * 0.012; 
+                targetWalkAngle = Math.sin(this.walkCycle) * 0.12; // Ayunan tubuh lebih natural
+                // Menggunakan kurva 1-cos untuk pantulan membulat yang sangat mulus (tidak tajam)
+                targetWalkBounce = (1 - Math.cos(this.walkCycle * 2)) * 8; 
+            } else if (!this.onGround && !this.isCrouching) {
+                // Postur dinamis saat melompat / jatuh di udara (dipertahankan lembut)
+                targetWalkAngle = this.vy > 0 ? 0.08 : -0.08; 
+                targetWalkBounce = 0;
+            } else {
+                // Diam
+                targetWalkAngle = 0;
+                targetWalkBounce = 0;
             }
+
+            // LERP (Linear Interpolation) - Rahasia untuk transisi tanpa patah-patah!
+            this.currentWalkAngle += (targetWalkAngle - this.currentWalkAngle) * 0.15;
+            this.currentWalkBounce += (targetWalkBounce - this.currentWalkBounce) * 0.2;
+
+            // Pindah pusat poros koordinat tepat ke "Titik Kaki Tengah" (Bottom Center)
+            ctx.translate(drawX + this.w / 2, drawY + this.h - this.currentWalkBounce);
+
+            // Balikkan SELURUH objek (Karakter + Pedang) secara otomatis jika menghadap kiri
+            if (!this.facingRight) {
+                ctx.scale(-1, 1);
+            }
+
+            // Aplikasikan kemiringan berjalan yang sudah di-smoothing
+            ctx.rotate(this.currentWalkAngle);
 
             ctx.shadowColor = 'rgba(0,0,0,0.4)';
             ctx.shadowBlur = 12;
             ctx.shadowOffsetY = 10;
 
+            // 1. MENGGAMBAR KARAKTER TERLEBIH DAHULU (Agar ada di belakang pedang)
             if (this.image.complete && this.image.naturalHeight !== 0) {
-                // TRICK MASKING: Memotong gambar agar tidak melewati batas badan karakter
                 ctx.save();
                 ctx.beginPath();
-                ctx.roundRect(drawX, drawY, this.w, this.h, 24); // Radius lengkung diperbesar
+                // Potong radius (Masking) dengan acuan dari kaki ke atas kepalanya (-this.w/2, -this.h)
+                ctx.roundRect(-this.w / 2, -this.h, this.w, this.h, 48); 
                 ctx.clip(); 
                 
-                // Gambar ditarik paksa mengisi kotak (w=72, h=100)
-                ctx.drawImage(this.image, drawX, drawY, this.w, this.h);
-                
-                ctx.restore(); 
-            } else {
-                ctx.fillStyle = '#f1c40f';
-                ctx.beginPath();
-                ctx.roundRect(drawX, drawY, this.w, this.h, 24);
-                ctx.fill();
+                // FLIP GAMBAR: Gambar dari URL aslinya menghadap kiri. 
+                // Kita wajib "Mirror" (-1) agar default-nya menghadap kanan mengikuti sistem game.
+                ctx.scale(-1, 1);
+                ctx.drawImage(this.image, -this.w / 2, -this.h, this.w, this.h);
+                ctx.restore();
             }
-            ctx.restore();
+
+            // 2. MENGGAMBAR ANIMASI PEDANG DI ATAS/DEPAN KARAKTER 
+            if (this.attackTimer > 0) {
+                let p = 1 - (this.attackTimer / 15); // Progress 0 ke 1
+                
+                // --- MENGGAMBAR PEDANG FISIK ---
+                ctx.save();
+                // Posisikan engsel putaran pada lengan bahu (Relatif terhadap titik kaki tengah)
+                ctx.translate(50, -this.h / 2 + 50); 
+                
+                // Ayunkan pedang dari posisi atas-belakang ke depan-bawah
+                let startAngleSword = -Math.PI * 0.6; 
+                let endAngleSword = Math.PI * 0.3;    
+                ctx.rotate(startAngleSword + (endAngleSword - startAngleSword) * p);
+                
+                // Skala pedang diperbesar 1.8x menyesuaikan ukuran karakter
+                ctx.scale(1.8, 1.8);
+
+                // Matikan bayangan sejenak untuk menggambar pedang agar lebih solid
+                ctx.shadowBlur = 0; 
+
+                // Gambar Gagang Pedang (Coklat)
+                ctx.fillStyle = '#5c4033';
+                ctx.fillRect(-30, -8, 40, 16);
+                
+                // Gambar Bilah Pedang (Perak/Abu-abu)
+                ctx.fillStyle = '#bdc3c7';
+                ctx.beginPath();
+                ctx.moveTo(17, -15);
+                ctx.lineTo(130, -10);
+                ctx.lineTo(160, 0); // Ujung Lancip Pedang
+                ctx.lineTo(130, 10);
+                ctx.lineTo(17, 15);
+                ctx.fill();
+                
+                // Gambar Garis Kilauan di Tengah Pedang (Putih)
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(17, -2, 110, 4);
+                
+                ctx.restore();
+                // --- AKHIR TAMBAHAN PEDANG FISIK ---
+
+                // EFEK TEBASAN CAHAYA BIRU 
+                ctx.save();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.shadowColor = '#00ffff';
+                ctx.shadowBlur = 25;
+                
+                // Pindah poros putaran tebasan ke titik perut (0, -h/2)
+                ctx.translate(0, -this.h / 2);
+                
+                // Radius tebasan sinar biru membesar seukuran raksasa
+                let radiusOut = 240 + (p * 120); 
+                let radiusIn = radiusOut - 60; 
+                
+                ctx.beginPath();
+                let effectStartAngle = -Math.PI / 2; 
+                let sweep = Math.PI * 1.3 * p; 
+                
+                ctx.arc(0, 0, radiusOut, effectStartAngle, effectStartAngle + sweep, false);
+                ctx.arc(0, 0, radiusIn, effectStartAngle + sweep, effectStartAngle, true);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+
+            ctx.restore(); // Kembalikan seluruh transformasi canvas ke semula
         }
     }
 
-    const player = new Player();
+    let player = new Player();
 
     function loadLevel() {
         blocks = [];
         coinsList = [];
         enemies = [];
-        particles = [];
+        let possibleSpawns = [];
         
         for (let row = 0; row < levelMap.length; row++) {
             for (let col = 0; col < levelMap[row].length; col++) {
@@ -826,16 +1155,54 @@
                     blocks.push(new Block(x, y, char));
                 }
                 
-                if (char === '1' && row > 0 && levelMap[row-1][col] === ' ' && Math.random() < 0.1) {
-                    if (col > 10) {
-                       enemies.push(new Enemy(x, y - 72));
-                    }
+                // Kumpulkan semua titik di mana musuh BISA muncul
+                // Syarat: Blok lantai ('1') yang atasnya kosong dan cukup jauh dari titik start pemain
+                if (char === '1' && row > 0 && levelMap[row-1][col] === ' ' && col > 15) {
+                    possibleSpawns.push({x: x, y: y});
                 }
                 
+                // Spawn koin acak
                 if (char === ' ' && row > 5 && Math.random() < 0.05 && levelMap[row+1] && levelMap[row+1][col] === '1') {
                      coinsList.push(new Coin(x + 20, y)); 
                 }
             }
+        }
+        
+        // --- LOGIKA MUNCULKAN TEPAT 10 MUSUH (DENGAN JARAK AMAN) ---
+        // 1. Acak urutan titik yang memungkinkan
+        possibleSpawns.sort(() => Math.random() - 0.5);
+        
+        let selectedSpawns = [];
+        let minDistance = TILE_SIZE * 12; // Minimal jarak antar musuh diperjauh menjadi 12 blok
+        
+        // 2. Filter agar tidak ada musuh yang spawn berdekatan
+        for (let spawn of possibleSpawns) {
+            let tooClose = false;
+            for (let sel of selectedSpawns) {
+                // Cek jarak Horizontal X
+                if (Math.abs(spawn.x - sel.x) < minDistance) {
+                    tooClose = true;
+                    break;
+                }
+            }
+            if (!tooClose) {
+                selectedSpawns.push(spawn);
+            }
+            // Berhenti jika sudah mengumpulkan 10 lokasi aman
+            if (selectedSpawns.length >= 10) break; 
+        }
+        
+        // 3. Masukkan musuh ke map (Dengan Kata Dijamin Unik!)
+        // Acak daftar kata negatif agar tidak ada yang sama di satu level
+        let shuffledWords = [...NEGATIVE_WORDS].sort(() => Math.random() - 0.5);
+        
+        for (let i = 0; i < selectedSpawns.length; i++) {
+            let spawn = selectedSpawns[i];
+            let word = shuffledWords[i]; // Jaminan setiap musuh mendapatkan kata unik
+            let theme = ENEMY_THEMES[i % ENEMY_THEMES.length];
+            
+            // Perhatikan tinggi (h = 320) agar musuh muncul pas di atas tanah
+            enemies.push(new Enemy(spawn.x, spawn.y - 320, word, theme));
         }
     }
 
