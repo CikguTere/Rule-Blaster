@@ -65,14 +65,14 @@
         /* Peringatan Wajib Landscape di HP */
         #portrait-warning {
             display: none;
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #111; z-index: 9999; color: white;
             flex-direction: column; justify-content: center; align-items: center;
             text-align: center; padding: 30px;
         }
-        @media screen and (orientation: portrait) and (max-width: 768px) {
-            #portrait-warning { display: flex; }
-            #game-container { display: none; }
+        @media screen and (orientation: portrait) {
+            #portrait-warning { display: flex !important; }
+            #game-container { display: none !important; }
         }
     </style>
 </head>
@@ -968,6 +968,27 @@
         currentLevel = 1;
         drawBackground(); 
     });
+
+    // --- PENYESUAIAN LAYAR HP (ROTATION FIX) ---
+    function handleResize() {
+        // Memastikan tinggi game pas dengan layar HP (menghindari masalah address bar)
+        document.body.style.height = window.innerHeight + 'px';
+        document.getElementById('game-container').style.height = window.innerHeight + 'px';
+        
+        // Pancing browser untuk merender ulang kanvas setelah HP diputar
+        canvas.style.display = 'none';
+        canvas.offsetHeight; // Memicu reflow
+        canvas.style.display = 'block';
+    }
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', () => {
+        setTimeout(handleResize, 100);
+        setTimeout(handleResize, 500); // Beri jeda untuk HP yang rotasinya agak lambat
+    });
+    
+    // Panggil saat pertama kali dimuat
+    handleResize();
 
     drawBackground();
 </script>
