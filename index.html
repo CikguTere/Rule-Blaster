@@ -3,209 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fullscreen HD Platformer</title>
+    <title>Retro Cyberpunk Platformer</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            user-select: none;
-            -webkit-user-select: none;
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        body { 
+            background-color: #111; 
+            color: #fff; 
+            font-family: 'Press Start 2P', cursive; 
+            display: flex; justify-content: center; align-items: center; 
+            width: 100vw; height: 100vh; overflow: hidden; touch-action: none; 
         }
-
-        body {
-            background-color: #000; /* Layar belakang hitam murni untuk sisa layar kosong */
-            color: #fff;
-            font-family: 'Fredoka One', cursive;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-            touch-action: none;
+        #game-container { position: relative; width: 100vw; height: 100vh; background-color: #2b1f31; }
+        canvas { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+        
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0, 0, 0, 0.85); z-index: 10; text-align: center;}
+        .hidden { display: none !important; }
+        h1 { color: #fff; text-shadow: 4px 4px 0 #d35400; font-size: clamp(20px, 4vw, 50px); margin-bottom: 20px; line-height: 1.5; }
+        p.subtitle { font-size: 14px; margin-bottom: 30px; color: #f1c40f; line-height: 1.8; max-width: 600px; padding: 0 20px;}
+        
+        .btn { 
+            background: #3498db; color: white; border: 4px solid #fff; border-radius: 0; 
+            padding: 15px 30px; font-family: 'Press Start 2P', cursive; font-size: clamp(12px, 2vw, 20px); 
+            cursor: pointer; box-shadow: 4px 4px 0 #1f618d; transition: all 0.1s; margin-bottom: 10px;
         }
-
-        /* 1. CONTAINER LAYAR PENUH */
-        #game-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            background-color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        .btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0; }
+        
+        #hud { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; font-size: clamp(10px, 2vw, 20px); z-index: 5; pointer-events: none; text-shadow: 3px 3px 0 #000; color: white; }
+        
+        #controls-hint { position: absolute; bottom: 20px; width: 100%; text-align: center; font-size: 12px; color: rgba(255,255,255,0.7); pointer-events: none;}
+        
+        #level-indicator { position: absolute; top: 60px; left: 50%; transform: translateX(-50%); font-size: 24px; color: #f1c40f; text-shadow: 3px 3px 0 #000; z-index: 5; transition: opacity 2s;}
+        
+        /* Tombol Sentuh (Mobile) */
+        #touch-controls {
+            position: absolute; bottom: 20px; left: 0; width: 100%;
+            display: flex; justify-content: space-between; padding: 0 30px;
+            z-index: 20; pointer-events: none;
         }
-
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: contain; /* Memastikan game membesar maksimal tanpa merusak aspek rasio 16:9 */
+        .touch-btn-group { display: flex; gap: 15px; pointer-events: auto;}
+        .touch-btn {
+            width: 60px; height: 60px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white; font-family: 'Press Start 2P', cursive; font-size: 20px;
+            display: flex; justify-content: center; align-items: center;
+            user-select: none; -webkit-touch-callout: none;
         }
-
-        /* UI Overlays */
-        .overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-            z-index: 10;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        h1 {
-            color: #f1c40f;
-            text-shadow: 0 6px 0 #d35400, 0 10px 10px rgba(0,0,0,0.5);
-            font-size: clamp(40px, 8vw, 80px); /* Teks diperbesar */
-            margin-bottom: 20px;
-            text-align: center;
-            letter-spacing: 2px;
-        }
-
-        h2 {
-            font-size: clamp(24px, 5vw, 40px);
-            margin-bottom: 15px;
-            text-shadow: 0 3px 0 #000;
-        }
-
-        .btn {
-            background: linear-gradient(to bottom, #3498db, #2980b9);
-            color: white;
-            border: none;
-            border-bottom: 6px solid #1f618d;
-            border-radius: 12px;
-            padding: 20px 50px;
-            font-family: 'Fredoka One', cursive;
-            font-size: clamp(20px, 4vw, 30px);
-            cursor: pointer;
-            transition: transform 0.1s, filter 0.2s;
-            margin: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        .btn:hover {
-            filter: brightness(1.2);
-            transform: translateY(-2px);
-        }
-
-        .btn:active {
-            transform: translateY(4px);
-            border-bottom: 2px solid #1f618d;
-        }
-
-        /* HUD */
-        #hud {
-            position: absolute;
-            top: 30px;
-            left: 30px;
-            right: 30px;
-            display: flex;
-            justify-content: space-between;
-            font-size: clamp(20px, 3vw, 32px);
-            z-index: 5;
-            pointer-events: none;
-            text-shadow: 0 4px 0 rgba(0,0,0,0.8);
-            color: white;
-        }
-
-        /* Mobile Controls */
-        #mobile-controls {
-            position: absolute;
-            bottom: 40px;
-            left: 0;
-            width: 100%;
-            display: none;
-            justify-content: space-between;
-            padding: 0 50px;
-            z-index: 20;
-            opacity: 0.6;
-            transition: opacity 0.3s;
-        }
-
-        #mobile-controls:active {
-            opacity: 1;
-        }
-
-        .control-group {
-            display: flex;
-            gap: 30px;
-        }
-
-        .control-btn {
-            width: 90px;
-            height: 90px;
-            background-color: rgba(255, 255, 255, 0.2);
-            border: 4px solid rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 40px;
-            color: white;
-            pointer-events: auto;
-            backdrop-filter: blur(2px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        .control-btn:active {
-            background-color: rgba(255, 255, 255, 0.5);
-            transform: scale(0.95);
-        }
+        .touch-btn:active { background: rgba(255, 255, 255, 0.6); }
+        
+        /* Sembunyikan tombol sentuh di layar besar (Desktop) */
+        @media (min-width: 1024px) { #touch-controls { display: none; } }
     </style>
 </head>
 <body>
 
 <div id="game-container">
     <canvas id="gameCanvas"></canvas>
-    
     <div id="hud">
-        <div id="score-display">SCORE: 0</div>
-        <div id="coin-display">COINS: 0</div>
-        <div id="lives-display">LIVES: 3</div>
+        <div id="score-display">SKOR: 00000</div>
+        <div id="level-display">DUNIA: 1</div>
+        <div id="lives-display">NYAWA: 3</div>
     </div>
-
+    
+    <div id="level-indicator" class="hidden">LEVEL 1: CITY LIGHT</div>
+    <div id="controls-hint">PANAH: Gerak/Lompat | Z: Serang Pedang</div>
+    
     <div id="main-menu" class="overlay">
-        <h1>Mighty Runner</h1>
-        <div style="margin-bottom: 40px; font-size: 24px; line-height: 1.6; text-align: center; text-shadow: 0 3px 6px #000;">
-            Controls:<br>Arrows / WASD to move<br>Down to Crouch / Fast Fall<br>Space / Up to jump<br>F / X to Attack
+        <h1>PEMBERANTAS<br>SIFAT BURUK</h1>
+        <p class="subtitle">Pilih dunia yang ingin kamu bersihkan dari sifat buruk!</p>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button class="btn world-btn" data-level="1" style="background: #d35400;">WORLD 1: CITY LIGHT</button>
+            <button class="btn world-btn" data-level="2" style="background: #1abc9c;">WORLD 2: ICE VIEW</button>
+            <button class="btn world-btn" data-level="3" style="background: #c0392b;">WORLD 3: VOLCANO</button>
         </div>
-        <button class="btn" id="start-btn">START GAME</button>
-        <div style="font-size: 20px; margin-top: 30px;" id="high-score-display">HIGH SCORE: 0</div>
     </div>
-
+    
     <div id="game-over" class="overlay hidden">
-        <h1 style="color: #e74c3c; text-shadow: 0 6px 0 #922b21;">GAME OVER</h1>
-        <button class="btn" id="restart-btn" style="background: #e74c3c; border-color: #c0392b;">TRY AGAIN</button>
+        <h1 style="color: #e74c3c; text-shadow: 4px 4px 0 #c0392b;">GAME OVER</h1>
+        <p class="subtitle">Jangan menyerah! Sifat baik selalu bisa mengalahkan yang buruk.</p>
+        <button class="btn" id="restart-btn">COBA LAGI</button>
     </div>
 
-    <div id="victory" class="overlay hidden">
-        <h1 style="color: #2ecc71; text-shadow: 0 6px 0 #27ae60;">LEVEL CLEARED!</h1>
-        <h2 id="final-score">SCORE: 0</h2>
-        <button class="btn" id="next-btn">PLAY AGAIN</button>
+    <div id="victory-screen" class="overlay hidden">
+        <h1 style="color: #2ecc71; text-shadow: 4px 4px 0 #27ae60;">SELAMAT!</h1>
+        <p class="subtitle">Kamu telah mengalahkan semua sifat buruk di ketiga dunia! Kamu adalah pahlawan sejati.</p>
+        <button class="btn" id="play-again-btn">MAIN LAGI</button>
     </div>
 
-    <div id="mobile-controls">
-        <div class="control-group">
-            <div class="control-btn" id="btn-left">◀</div>
-            <div class="control-btn" id="btn-down">▼</div>
-            <div class="control-btn" id="btn-right">▶</div>
+    <!-- Tombol Sentuh Layar (Akan muncul di layar kecil/HP) -->
+    <div id="touch-controls">
+        <div class="touch-btn-group">
+            <div class="touch-btn" id="btn-left">◀</div>
+            <div class="touch-btn" id="btn-right">▶</div>
         </div>
-        <div class="control-group">
-            <div class="control-btn" id="btn-attack" style="background-color: rgba(231, 76, 60, 0.5); border-color: #ff7979;">⚔️</div>
-            <div class="control-btn" id="btn-jump">▲</div>
+        <div class="touch-btn-group">
+            <div class="touch-btn" id="btn-attack">Z</div>
+            <div class="touch-btn" id="btn-jump">▲</div>
         </div>
     </div>
 </div>
@@ -213,1134 +107,841 @@
 <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d', { alpha: false }); 
-
-    // UI Elements
-    const mainMenu = document.getElementById('main-menu');
-    const gameOverMenu = document.getElementById('game-over');
-    const victoryMenu = document.getElementById('victory');
-    const scoreDisplay = document.getElementById('score-display');
-    const coinDisplay = document.getElementById('coin-display');
-    const livesDisplay = document.getElementById('lives-display');
-    const mobileControls = document.getElementById('mobile-controls');
+    const GAME_WIDTH = 1280;
+    const GAME_HEIGHT = 720;
+    canvas.width = GAME_WIDTH;
+    canvas.height = GAME_HEIGHT;
     
-    // 2. SKALA RESOLUSI DIPERBESAR
-    const GAME_WIDTH = 2000;
-    const GAME_HEIGHT = 1125;
-    const TILE_SIZE = 80; // Blok/Tanah diperbesar menjadi 80px
-    
-    // Physics Constants - Disesuaikan dengan karakter yang lebih besar
-    const GRAVITY = 1.2;
-    const TERMINAL_VELOCITY = 28;
-    const FRICTION = 0.8;
-    const ACCELERATION = 1.8;
-    const MAX_SPEED = 12;
-    const JUMP_FORCE = -28; // Lompatan dibuat lebih bertenaga
-
-    // Game State
-    let gameState = 'menu';
-    let animationId;
-    let camera = { x: 0, y: 0 };
-    let score = 0;
-    let coins = 0;
+    // --- STATE GAME ---
+    const TILE = 64;
+    let cameraX = 0;
     let lives = 3;
-    let highScore = localStorage.getItem('giantPlatHighScore') || 0;
+    let score = 0;
+    let currentLevel = 1;
+    let gameRunning = false;
+    let frameCount = 0;
+    const levelLength = 11000; // Jarak akhir setiap level
     
-    document.getElementById('high-score-display').innerText = `HIGH SCORE: ${highScore}`;
+    // Daftar 10 kata negatif berbeda tiap level (Total 30 kata)
+    const levelWords = {
+        1: ["BOHONG", "CURANG", "MALAS", "NAKAL", "JAHIL", "PELIT", "PAMER", "NYONTEK", "KASAR", "BOLOS"],
+        2: ["EJEK", "REWEL", "CENGENG", "SERAKAH", "IRI", "SOMBONG", "MENGELUH", "EGOIS", "CUEK", "KOTOR"],
+        3: ["BANTAH", "MUKUL", "BENTAK", "BERISIK", "REBUT", "DORONG", "ANCAM", "TERIAK", "USIL", "MARAH"]
+    };
 
-    // Resize Handler
-    function resizeCanvas() {
-        canvas.width = GAME_WIDTH;
-        canvas.height = GAME_HEIGHT;
-        ctx.imageSmoothingEnabled = true; 
-    }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+    const levelNames = {
+        1: "CITY LIGHT",
+        2: "ICE VIEW",
+        3: "VOLCANO"
+    };
 
-    // Input Handling
-    const keys = { left: false, right: false, up: false, down: false, attack: false };
+    // --- INPUT ---
+    let keys = {};
+    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keyup', e => keys[e.code] = false);
 
-    window.addEventListener('keydown', (e) => {
-        if(gameState !== 'playing') return;
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
-        if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = true;
-        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
-            if(!keys.up && player) player.jump();
-            keys.up = true;
-        }
-        if (e.code === 'KeyF' || e.code === 'KeyX' || e.code === 'Enter') {
-            if(!keys.attack && player) player.attack();
-            keys.attack = true;
-        }
+    // --- Input Sentuh (Mobile) ---
+    const touchMap = {
+        'btn-left': 'ArrowLeft',
+        'btn-right': 'ArrowRight',
+        'btn-jump': 'ArrowUp',
+        'btn-attack': 'KeyZ'
+    };
+    
+    document.querySelectorAll('.touch-btn').forEach(btn => {
+        btn.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Mencegah layar ikut zoom/scroll saat disentuh
+            keys[touchMap[e.target.id]] = true;
+        }, {passive: false});
+        
+        btn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            keys[touchMap[e.target.id]] = false;
+        }, {passive: false});
     });
 
-    window.addEventListener('keyup', (e) => {
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
-        if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = false;
-        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = false;
-        if (e.code === 'KeyF' || e.code === 'KeyX' || e.code === 'Enter') keys.attack = false;
-    });
-
-    // Touch Controls
-    function setupTouchControls() {
-        const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-        if (isTouch) {
-            mobileControls.style.display = 'flex';
-            const btnLeft = document.getElementById('btn-left');
-            const btnRight = document.getElementById('btn-right');
-            const btnDown = document.getElementById('btn-down');
-            const btnJump = document.getElementById('btn-jump');
-            const btnAttack = document.getElementById('btn-attack');
-
-            const addTouch = (elem, key) => {
-                elem.addEventListener('touchstart', (e) => { 
-                    e.preventDefault(); 
-                    keys[key] = true; 
-                    if(key === 'up' && player) player.jump(); 
-                    if(key === 'attack' && player) player.attack();
-                });
-                elem.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
-            };
-
-            addTouch(btnLeft, 'left');
-            addTouch(btnRight, 'right');
-            addTouch(btnDown, 'down');
-            addTouch(btnJump, 'up');
-            addTouch(btnAttack, 'attack');
-        }
+    // --- UTILITAS ---
+    function checkCollision(r1, r2) {
+        return r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y;
     }
-    setupTouchControls();
+    function padScore(num) { return num.toString().padStart(5, '0'); }
 
-    const levelMap = [
-        "                                                                                                                                                                                                        ",
-        "                                                                                                                                                                                                        ",
-        "                                                                                                                                                                                                      6 ",
-        "                                                                                                                                                                                                      5 ",
-        "                                                                                                                                                                                                      5 ",
-        "                                                                                                                                                                                                      5 ",
-        "                                                                                                                                                                                                      5 ",
-        "                                                                                                                                                                                                      5 ",
-        "                                       88                                                         888                                           88                                                    5 ",
-        "           88                          88                                            88           888                                           88                                        88          5 ",
-        "           88                          88                                            88           888                                           88                                        88          5 ",
-        "           88           888            88        9                  8888             88           888             8888                      88888             8888                    88          5 ",
-        "           88           888            88                           8888             88   9       888      9      8888          9           88888             8888        9           88          5 ",
-        "111111111111111111111777111111111111111111111111111777771111111111111111111111111111111111111111111111111177711111111111111111111111111117777111111111111111111111111111111111111111111111111111111111",
-        "111111111111111111111777111111111111111111111111111777771111111111111111111111111111111111111111111111111177711111111111111111111111111117777111111111111111111111111111111111111111111111111111111111"
+    // --- AUDIO (WEB AUDIO API) ---
+    let audioCtx;
+    let nextNoteTime = 0;
+    let noteIndex = 0;
+
+    // Track Musik Latar 8-bit Klasik (Melodi petualangan santai & Bass Triangle)
+    const bgmTrack = [
+        [72, 48], [0,  48], [76, 55], [0,  55], [79, 60], [79, 60], [76, 55], [0,  55],
+        [77, 53], [0,  53], [81, 57], [0,  57], [84, 60], [84, 60], [81, 57], [0,  57],
+        [79, 55], [79, 55], [77, 53], [77, 53], [76, 52], [76, 52], [74, 50], [74, 50],
+        [72, 48], [0,  48], [72, 48], [0,  48], [72, 48], [0,  48], [0,   0], [0,   0]
     ];
 
-    let mapWidth = levelMap[0].length * TILE_SIZE;
-    let mapHeight = levelMap.length * TILE_SIZE;
-
-    // AABB Collision (Akurat)
-    function checkCollision(r1, r2) {
-        return r1.x < r2.x + r2.w &&
-               r1.x + r1.w > r2.x &&
-               r1.y < r2.y + r2.h &&
-               r1.y + r1.h > r2.y;
-    }
-
-    class Particle {
-        constructor(x, y, color, type = 'normal') {
-            this.x = x;
-            this.y = y;
-            this.color = color;
-            this.type = type; 
-            this.life = 1.0;
-            
-            if (type === 'normal') {
-                this.vx = (Math.random() - 0.5) * 20;
-                this.vy = (Math.random() - 1) * 20;
-                this.size = Math.random() * 16 + 6;
-            } else if (type === 'text') {
-                this.vx = 0;
-                this.vy = -5;
-                this.text = "+100";
-            }
-        }
-        update() {
-            this.x += this.vx;
-            this.y += this.vy;
-            if (this.type === 'normal') {
-                this.vy += GRAVITY * 0.5;
-            }
-            this.life -= 0.02;
-        }
-        draw() {
-            ctx.globalAlpha = Math.max(0, this.life);
-            if (this.type === 'normal') {
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x - camera.x, this.y - camera.y, this.size, 0, Math.PI*2);
-                ctx.fill();
-            } else if (this.type === 'text') {
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 40px "Fredoka One"';
-                ctx.fillText(this.text, this.x - camera.x, this.y - camera.y);
-            }
-            ctx.globalAlpha = 1.0;
-        }
+    function initAudio() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
     }
     
+    function playNote(midi, duration, type, vol) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(440 * Math.pow(2, (midi - 69) / 12), audioCtx.currentTime);
+        
+        // Envelope untuk suara mulus (tanpa popping)
+        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function playSlashSound() {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+    }
+
+    function playLevelUpSound() {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime + 0.1);
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+    }
+
+    function playPowerUpSound() {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+        osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    // --- EFEK VISUAL ---
     let particles = [];
+    let floatingTexts = [];
+    let weatherParticles = [];
+
     function spawnParticles(x, y, color, count) {
         for(let i=0; i<count; i++) {
-            particles.push(new Particle(x, y, color, 'normal'));
+            particles.push({
+                x: x, y: y,
+                vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10,
+                life: 30 + Math.random() * 20, color: color, size: 4 + Math.random() * 6
+            });
         }
     }
 
-    let blocks = [];
-    let coinsList = [];
-    let enemies = [];
+    function addScore(amount, x, y) {
+        score += amount;
+        document.getElementById('score-display').innerText = `SKOR: ${padScore(score)}`;
+        floatingTexts.push({ x: x, y: y, text: `+${amount}`, life: 60, vy: -2 });
+    }
 
+    // --- KELAS GAME ---
     class Block {
-        constructor(x, y, type) {
-            this.x = x;
-            this.y = y;
-            this.w = TILE_SIZE;
-            this.h = TILE_SIZE;
-            this.type = type;
-            this.active = true;
-            this.bounceY = 0;
-            this.bouncing = false;
-        }
-        
-        hit() {
-            if (this.type === '1') {
-                this.bouncing = true;
-                setTimeout(() => { this.bouncing = false; this.bounceY = 0; }, 100);
-                spawnParticles(this.x + 40, this.y + 40, '#d35400', 6);
-            }
-        }
-        
-        update() {
-            if (this.bouncing) this.bounceY = -20;
-            else this.bounceY = 0;
-        }
-        
-        draw() {
-            let drawX = this.x - camera.x;
-            let drawY = this.y - camera.y + this.bounceY;
-            
-            ctx.save();
-            if (this.type === '1') {
-                let grad = ctx.createLinearGradient(drawX, drawY, drawX, drawY + this.h);
-                grad.addColorStop(0, '#e67e22');
-                grad.addColorStop(1, '#d35400');
-                ctx.fillStyle = grad;
-                ctx.beginPath();
-                ctx.roundRect(drawX, drawY, this.w, this.h, 10);
-                ctx.fill();
-                ctx.strokeStyle = '#a04000';
-                ctx.lineWidth = 5;
-                ctx.stroke();
-            } else if (this.type === '5') { // Flag Pole
-                ctx.fillStyle = '#f1c40f';
-                ctx.fillRect(drawX + this.w/2 - 10, drawY, 20, this.h);
-            } else if (this.type === '6') { // Flag
-                ctx.fillStyle = '#e74c3c';
-                ctx.beginPath();
-                ctx.moveTo(drawX + this.w/2 - 10, drawY);
-                ctx.lineTo(drawX - 50, drawY + 40);
-                ctx.lineTo(drawX + this.w/2 - 10, drawY + 80);
-                ctx.fill();
-            } else if (this.type === '7') { // Duri / Spikes Bawah
-                ctx.fillStyle = '#bdc3c7';
-                ctx.beginPath();
-                ctx.moveTo(drawX, drawY + this.h);
-                ctx.lineTo(drawX + this.w/2, drawY + this.h/2);
-                ctx.lineTo(drawX + this.w, drawY + this.h);
-                ctx.fill();
-                ctx.strokeStyle = '#7f8c8d';
-                ctx.lineWidth = 4;
-                ctx.stroke();
-            } else if (this.type === '8') { // Stone Pillar
-                ctx.fillStyle = '#95a5a6';
-                ctx.fillRect(drawX, drawY, this.w, this.h);
-                ctx.strokeStyle = '#7f8c8d';
-                ctx.lineWidth = 4;
-                ctx.strokeRect(drawX, drawY, this.w, this.h);
-                // Garis batu bata
-                ctx.beginPath();
-                ctx.moveTo(drawX, drawY + this.h/2);
-                ctx.lineTo(drawX + this.w, drawY + this.h/2);
-                ctx.moveTo(drawX + this.w/2, drawY);
-                ctx.lineTo(drawX + this.w/2, drawY + this.h/2);
-                ctx.stroke();
-            } else if (this.type === '9') { // BOM
-                let cx = drawX + this.w/2;
-                let cy = drawY + this.h/2 + 10;
-                let radius = this.w/2 - 10;
-                
-                // Sumbu (Fuse)
-                ctx.strokeStyle = '#c0392b';
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                ctx.moveTo(cx, cy - radius);
-                ctx.quadraticCurveTo(cx + 10, cy - radius - 15, cx + 20, cy - radius - 20);
-                ctx.stroke();
-                
-                // Percikan api (Spark)
-                ctx.fillStyle = '#f1c40f';
-                ctx.beginPath();
-                ctx.arc(cx + 20, cy - radius - 20, 6 + Math.random()*4, 0, Math.PI*2);
-                ctx.fill();
-
-                // Tubuh Bom
-                ctx.fillStyle = '#111';
-                ctx.beginPath();
-                ctx.arc(cx, cy, radius, 0, Math.PI*2);
-                ctx.fill();
-                
-                // Highlight bola bom
-                ctx.fillStyle = 'rgba(255,255,255,0.3)';
-                ctx.beginPath();
-                ctx.arc(cx - 8, cy - 8, radius/4, 0, Math.PI*2);
-                ctx.fill();
-            }
-            ctx.restore();
-        }
-    }
-
-    class Coin {
-        constructor(x, y, fromBlock = false) {
-            this.x = x;
-            this.y = y;
-            this.w = 40; // Koin diperbesar
-            this.h = 60;
-            this.vy = fromBlock ? -24 : 0;
-            this.fromBlock = fromBlock;
-            this.collected = false;
-            this.timer = 0;
-        }
-        update() {
-            if (this.collected) return;
-            this.timer++;
-            
-            if (this.fromBlock) {
-                this.y += this.vy;
-                this.vy += GRAVITY;
-                if (this.vy > 0) {
-                    this.collected = true; 
-                    coins++;
-                    spawnParticles(this.x + this.w/2, this.y + this.h/2, '#f1c40f', 10);
-                }
-            } else {
-                this.y += Math.sin(this.timer * 0.1) * 1.0;
-            }
+        constructor(x, y) {
+            this.x = x; this.y = y; this.w = TILE; this.h = TILE;
         }
         draw() {
-            if (this.collected) return;
-            let drawX = this.x - camera.x;
-            let drawY = this.y - camera.y;
+            if (this.x - cameraX < -TILE || this.x - cameraX > GAME_WIDTH) return;
             
-            let widthScale = Math.abs(Math.cos(this.timer * 0.1));
-            let currentWidth = Math.max(10, this.w * widthScale);
-            let xOffset = (this.w - currentWidth) / 2;
+            let mainColor, topColor, borderColor;
             
-            ctx.save();
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = '#f1c40f';
-            ctx.fillStyle = '#f1c40f';
-            ctx.beginPath();
-            ctx.ellipse(drawX + xOffset + currentWidth/2, drawY + this.h/2, currentWidth/2, this.h/2, 0, 0, Math.PI*2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-            ctx.strokeStyle = '#f39c12';
-            ctx.lineWidth = 5;
-            ctx.stroke();
-            ctx.restore();
+            // Tema Blok berdasarkan Level
+            if (currentLevel === 1) { // City Light
+                mainColor = '#a0522d'; topColor = '#2ecc71'; borderColor = '#5c2e16';
+            } else if (currentLevel === 2) { // Ice View
+                mainColor = '#34495e'; topColor = '#ecf0f1'; borderColor = '#2c3e50';
+            } else { // Volcano
+                mainColor = '#2c3e50'; topColor = '#e74c3c'; borderColor = '#000000';
+            }
+
+            // Gambar bata
+            ctx.fillStyle = mainColor;
+            ctx.fillRect(this.x - cameraX, this.y, this.w, this.h);
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(this.x - cameraX, this.y, this.w, this.h);
+            
+            // Pola bata
+            ctx.beginPath(); ctx.moveTo(this.x - cameraX, this.y + TILE/2); ctx.lineTo(this.x - cameraX + TILE, this.y + TILE/2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(this.x - cameraX + TILE/2, this.y); ctx.lineTo(this.x - cameraX + TILE/2, this.y + TILE/2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(this.x - cameraX + TILE/4, this.y + TILE/2); ctx.lineTo(this.x - cameraX + TILE/4, this.y + TILE); ctx.stroke();
+            
+            // Lapisan atas (Rumput/Salju/Lava)
+            ctx.fillStyle = topColor;
+            ctx.fillRect(this.x - cameraX, this.y, this.w, 10);
         }
     }
-
-    // --- DAFTAR KATA NEGATIF & WARNA MUSUH ---
-    const NEGATIVE_WORDS = [
-        "Melawan Orang Tua", "Berbicara Kasar", "Tidak Sopan",
-        "Tidak Disiplin", "Curang di Game", "Merusak Fasilitas",
-        "Suka Berbohong", "Suka Membully", "Sering Membolos",
-        "Malas Belajar", "Menyontek PR", "Suka Berkelahi"
-    ];
-
-    // --- TEMA WARNA TUA UNTUK BOLA & DURI ---
-    const ENEMY_THEMES = [
-        { base: '#1a1a1a', spikeLight: '#3d3d3d', spikeDark: '#0a0a0a' }, // Hitam
-        { base: '#800000', spikeLight: '#a52a2a', spikeDark: '#4d0000' }, // Merah Tua
-        { base: '#004d00', spikeLight: '#008000', spikeDark: '#003300' }, // Hijau Tua
-        { base: '#4a235a', spikeLight: '#633974', spikeDark: '#311432' }, // Ungu Tua
-        { base: '#000080', spikeLight: '#0000b3', spikeDark: '#00004d' }, // Biru Tua
-        { base: '#b38f00', spikeLight: '#d4ac0d', spikeDark: '#806600' }  // Kuning Tua
-    ];
 
     class Enemy {
-        constructor(x, y, word = "Malas", theme) {
-            this.x = x;
-            this.y = y;
-            this.w = 320; // Bola Raksasa diperbesar 2x lipat
-            this.h = 320;
-            this.vx = -2.0; // Kecepatan bergerak/menggelinding diperlambat
-            this.vy = 0;
+        constructor(x, y, type, word) {
+            this.x = x; this.y = y; this.type = type; this.word = word;
             this.dead = false;
-            this.deadTimer = 0;
-            this.word = word;
-            this.theme = theme || ENEMY_THEMES[0];
-            this.color = this.theme.base;
-            this.rotation = 0;
+            this.startX = x; // Titik awal untuk patroli
+            
+            if (type === 'giant_spike') {
+                this.w = 120; this.h = 120; // Ukuran diperkecil dari 180
+                this.color = currentLevel === 3 ? '#c0392b' : '#7f8c8d'; // Duri lava di Lv 3
+                this.vx = 0; // Duri besar diam
+            } else {
+                this.w = 100; this.h = 100;
+                this.color = type === 'red' ? '#e74c3c' : (type === 'green' ? '#2ecc71' : '#9b59b6');
+                if (currentLevel === 2 && type === 'red') this.color = '#3498db'; // Ganti merah jadi biru es di Lv 2
+                this.vx = Math.random() > 0.5 ? 2 : -2; // Kecepatan gerak patroli
+            }
         }
-        
+
         update() {
-            if (this.dead) {
-                this.deadTimer++;
-                return;
-            }
+            if (this.dead || this.type === 'giant_spike') return;
             
-            this.vy += GRAVITY;
-            if (this.vy > TERMINAL_VELOCITY) this.vy = TERMINAL_VELOCITY;
-            
+            // Logika gerak patroli mondar-mandir
             this.x += this.vx;
-            // Efek Rotasi saat menggelinding diperlambat
-            this.rotation += this.vx * 0.015; 
+            if (Math.abs(this.x - this.startX) > 150) {
+                this.vx *= -1; // Balik arah jika sudah terlalu jauh dari titik awal
+            }
+        }
 
-            for (let b of blocks) {
-                if (b.type !== '1' && b.type !== '8') continue; // Hanya nabrak rumput dan batu
-                if (checkCollision(this, b)) {
-                    if (this.vx > 0) this.x = b.x - this.w;
-                    else this.x = b.x + b.w;
-                    this.vx *= -1;
-                }
-            }
-            
-            this.y += this.vy;
-            let onGround = false;
-            for (let b of blocks) {
-                if (b.type !== '1' && b.type !== '8') continue;
-                if (checkCollision(this, b)) {
-                    if (this.vy > 0) { 
-                        this.y = b.y - this.h;
-                        this.vy = 0;
-                        onGround = true;
-                    }
-                }
-            }
-            
-            if (onGround) {
-                let edgeCheckX = this.vx > 0 ? this.x + this.w : this.x;
-                let isBlockBelow = blocks.some(b => 
-                    (b.type === '1' || b.type === '8') &&
-                    edgeCheckX >= b.x && edgeCheckX <= b.x + b.w && 
-                    this.y + this.h + 2 >= b.y && this.y + this.h <= b.y + b.h
-                );
-                if (!isBlockBelow) this.vx *= -1; 
-            }
-        }
-        
-        die() {
-            this.dead = true;
-            this.h = 60; // Gencet jadi gepeng disesuaikan ukuran baru
-            this.y += 260; // Turunkan Y saat gepeng agar tetap di tanah
-            score += 200;
-            particles.push(new Particle(this.x + this.w/2, this.y, null, 'text'));
-            spawnParticles(this.x + this.w/2, this.y, this.color, 40);
-        }
-        
         draw() {
-            if (this.deadTimer > 30) return; 
+            if (this.dead || this.x - cameraX < -this.w || this.x - cameraX > GAME_WIDTH) return;
             
-            let drawX = this.x - camera.x;
-            let drawY = this.y - camera.y;
+            let drawX = this.x - cameraX + this.w/2;
+            let drawY = this.y + this.h/2;
             
             ctx.save();
-            
-            // Pindah orientasi ke pusat musuh
-            ctx.translate(drawX + this.w/2, drawY + this.h/2);
+            let scale = 1 + Math.sin(frameCount * 0.1 + this.x) * 0.05;
+            ctx.translate(drawX, drawY);
+            ctx.scale(scale, scale);
 
-            if (this.dead) {
-                // Jika mati, gencet skala sumbu Y nya
-                ctx.scale(1, 0.3);
-            }
-
-            // 1. Gambar Tubuh Bola Berduri (Ikut berputar seperti roda)
-            ctx.save();
-            if (!this.dead) ctx.rotate(this.rotation);
-            
-            let numSpikes = 6; // Menggunakan 6 duri agar menyebar rata
-            let radius = this.w / 2 - 45; // Radius bola inti
-            let spikeHeight = 45; // Panjang duri
-            let spikeBaseW = 55;  // Lebar bawah duri
-
-            // Menggambar Duri (Gaya Lipatan 3D Flat, menyesuaikan warna bola)
-            for (let i = 0; i < numSpikes; i++) {
-                ctx.save();
-                ctx.rotate((i * Math.PI * 2) / numSpikes);
-
-                // Setengah Duri Kiri (Warna Terang)
-                ctx.beginPath();
-                ctx.moveTo(0, -radius - spikeHeight); // Ujung Lancip
-                ctx.lineTo(-spikeBaseW/2, -radius + 5); // Kiri bawah
-                ctx.lineTo(0, -radius + 5); // Tengah bawah
-                ctx.fillStyle = this.theme.spikeLight;
-                ctx.fill();
-
-                // Setengah Duri Kanan (Warna Gelap/Bayangan)
-                ctx.beginPath();
-                ctx.moveTo(0, -radius - spikeHeight); // Ujung Lancip
-                ctx.lineTo(0, -radius + 5); // Tengah bawah
-                ctx.lineTo(spikeBaseW/2, -radius + 5); // Kanan bawah
-                ctx.fillStyle = this.theme.spikeDark;
-                ctx.fill();
-
-                ctx.restore();
-            }
-
-            // Menggambar Bola Inti (Warna Dasar Solid)
-            ctx.beginPath();
-            ctx.arc(0, 0, radius, 0, Math.PI*2);
-            ctx.fillStyle = this.color; 
-            ctx.fill();
-
-            // Menambahkan Efek Volume Bayangan Sabit (Crescent Shadow) di bagian bawah bola
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(0, 0, radius, 0, Math.PI * 2);
-            ctx.clip(); // Batasi gambar hanya di dalam lingkaran inti bola
-
-            ctx.beginPath();
-            ctx.arc(0, 0, radius, 0, Math.PI * 2);
-            ctx.arc(-20, -25, radius, 0, Math.PI * 2, true); // Potong bagian atas kiri
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; // Bayangan hitam transparan
-            ctx.fill('evenodd');
-            ctx.restore();
-            
-            ctx.restore(); // Hentikan rotasi agar teks tetap tegak
-
-            // 2. Gambar Teks Raksasa di Tengah Bola (Rapi & Tidak Gepeng)
-            if (!this.dead) {
-                let words = this.word.split(' ');
-                let lines = [];
-                
-                // Logika pembagian baris yang seragam
-                if (words.length === 1) lines.push(words[0]);
-                else if (words.length === 2) { lines.push(words[0]); lines.push(words[1]); }
-                else if (words.length === 3) { lines.push(words[0] + " " + words[1]); lines.push(words[2]); }
-                else {
-                    lines.push(words[0] + " " + words[1]);
-                    lines.push(words.slice(2).join(" "));
+            if (this.type === 'giant_spike') {
+                ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(0, 0, this.w/2, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 6; ctx.stroke();
+                // Duri
+                ctx.fillStyle = '#bdc3c7';
+                for(let i=0; i<8; i++) {
+                    ctx.rotate(Math.PI/4);
+                    ctx.beginPath(); ctx.moveTo(-15, -this.w/2); ctx.lineTo(15, -this.w/2); ctx.lineTo(0, -this.w/2 - 20); ctx.fill();
                 }
-                
-                // Font dibuat statis (selalu berukuran 48px), tidak akan gepeng menyempit
-                ctx.font = `bold 48px "Fredoka One", sans-serif`; 
-                ctx.fillStyle = 'white';
-                ctx.strokeStyle = 'black';
-                ctx.lineWidth = 10; 
+                ctx.scale(1/scale, 1/scale);
+                ctx.fillStyle = '#f1c40f'; // Kuning agar kontras di semua level
+                ctx.font = '20px "Press Start 2P"'; // Font sedikit dikecilkan
                 ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
+                ctx.fillText("AWAS!", 0, -this.h/2 - 25); // Jarak disesuaikan dengan ukuran baru
+            } else {
+                // Bola monster
+                ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(0, 0, this.w/2, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = '#000'; ctx.lineWidth = 4; ctx.stroke();
                 
-                let lineHeight = 55;
-                let startY = -(lines.length - 1) * (lineHeight / 2);
+                // Mata (Marah)
+                ctx.fillStyle = 'white';
+                ctx.beginPath(); ctx.ellipse(-20, -10, 15, 10, Math.PI/6, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.ellipse(20, -10, 15, 10, -Math.PI/6, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = 'black';
+                ctx.beginPath(); ctx.arc(-20, -5, 5, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(20, -5, 5, 0, Math.PI*2); ctx.fill();
                 
-                // Cetak setiap baris di posisi tengah yang harmonis
-                for(let j = 0; j < lines.length; j++) {
-                    ctx.strokeText(lines[j], 0, startY + j * lineHeight);
-                    ctx.fillText(lines[j], 0, startY + j * lineHeight);
-                }
+                // Alis
+                ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.moveTo(-40, -25); ctx.lineTo(-10, -15); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(40, -25); ctx.lineTo(10, -15); ctx.stroke();
+                
+                // Teks Kata Negatif
+                ctx.fillStyle = '#fff';
+                // Pengecilan font dinamis jika kata terlalu panjang
+                ctx.font = this.word.length > 7 ? '9px "Press Start 2P"' : '11px "Press Start 2P"';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'black'; ctx.shadowBlur = 4;
+                ctx.fillText(this.word, 0, 30);
+                ctx.shadowBlur = 0;
             }
+            ctx.restore();
+        }
+    }
 
+    class Potion {
+        constructor(x, y) {
+            this.x = x; this.y = y; this.w = 40; this.h = 50;
+            this.collected = false;
+            this.startY = y;
+        }
+        draw() {
+            if (this.collected || this.x - cameraX < -this.w || this.x - cameraX > GAME_WIDTH) return;
+            
+            // Efek melayang
+            this.y = this.startY + Math.sin(frameCount * 0.1) * 10;
+            
+            let drawX = this.x - cameraX;
+            let drawY = this.y;
+            
+            ctx.save();
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#2ecc71';
+            
+            // Badan botol kaca transparan
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.fillRect(drawX + 10, drawY, 20, 10); // Leher
+            ctx.fillRect(drawX, drawY + 10, 40, 40); // Bawah
+            
+            // Cairan Nyawa (Hijau)
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(drawX + 2, drawY + 20, 36, 28);
+            
+            // Tutup Botol
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#8e44ad';
+            ctx.fillRect(drawX + 8, drawY - 5, 24, 5);
+            
+            // Pantulan cahaya
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fillRect(drawX + 5, drawY + 15, 6, 25);
             ctx.restore();
         }
     }
 
     class Player {
         constructor() {
-            // 3. UKURAN KARAKTER DIPERBESAR (Sekarang 4x dari ukuran aslinya)
-            this.w = 288; // Lebar
-            this.originalH = 400; // Tinggi Asli
-            this.crouchH = 200; // Tinggi saat menunduk
-            this.h = this.originalH; 
-            this.walkCycle = 0; // Variabel penggerak animasi langkah
-            this.currentWalkAngle = 0; // Menyimpan sudut animasi berjalan saat ini
-            this.currentWalkBounce = 0; // Menyimpan tinggi pantulan saat ini
-            
-            // Menggunakan gambar URL Anda
-            this.image = new Image();
-            this.image.src = 'https://raw.githubusercontent.com/CikguTere/Rule-Blaster/main/magic_edit%23TUFIS1lPOEZtbTgjMSM3NmUyZTg4NmExZjBiY2VhYWYwNTIyMjI4MTNhODBlMCMxMTM4IyNUUkFOU0ZPUk1BVElPTl9SRVFVRVNU.png'; 
-            
-            this.reset();
-        }
-
-        reset() {
-            this.x = 200;
-            this.y = 100; // Muncul lebih di atas agar tidak terjebak tanah awal
-            this.vx = 0;
-            this.vy = 0;
+            this.w = 60; this.h = 90;
+            this.x = 300; this.y = 200;
+            this.vx = 0; this.vy = 0;
             this.onGround = false;
-            this.jumpCount = 0;
-            this.isInvincible = false;
-            this.invincibleTimer = 0;
             this.facingRight = true;
+            this.isAttacking = false;
             this.attackTimer = 0;
-            this.attackCooldown = 0;
-            this.isCrouching = false;
-            this.h = this.originalH;
-            this.dropTimer = 0;
-            this.ignoredBlocks = [];
-            this.walkCycle = 0; // Reset siklus langkah
-            this.currentWalkAngle = 0;
-            this.currentWalkBounce = 0;
-        }
-
-        attack() {
-            if (this.attackCooldown <= 0) {
-                this.attackTimer = 15; // Berapa frame tebasan aktif
-                this.attackCooldown = 30; // Jeda sebelum bisa menebas lagi
-                
-                // Efek partikel kecil saat mengayunkan pedang
-                spawnParticles(this.facingRight ? this.x + this.w : this.x, this.y + this.h/2, '#00ffff', 5);
-            }
-        }
-
-        jump() {
-            if (this.jumpCount < 2) {
-                this.vy = JUMP_FORCE;
-                this.onGround = false;
-                this.jumpCount++;
-                
-                // Efek partikel: Putih untuk lompatan pertama, Biru (Cyan) untuk double jump
-                let particleColor = this.jumpCount === 1 ? '#ffffff' : '#00ffff';
-                spawnParticles(this.x + this.w/2, this.y + this.h, particleColor, 15);
-            }
-        }
-
-        die() {
-            if (this.isInvincible) return;
-            this.vy = -30; // Lompatan mati
-            this.vx = 0;
-            lives--;
-            updateHUD();
-            
-            setTimeout(() => {
-                if (lives > 0) {
-                    this.reset();
-                    this.isInvincible = true;
-                    this.invincibleTimer = 120;
-                } else {
-                    gameOver();
-                }
-            }, 1500);
+            this.invincible = 0;
         }
 
         update() {
-            if (lives <= 0 && this.y > GAME_HEIGHT) return; 
+            // Kontrol Gerak
+            if (keys['ArrowRight']) { this.vx = 7; this.facingRight = true; }
+            else if (keys['ArrowLeft']) { this.vx = -7; this.facingRight = false; }
+            else { this.vx = 0; }
 
-            if (this.isInvincible) {
-                this.invincibleTimer--;
-                if (this.invincibleTimer <= 0) this.isInvincible = false;
+            // Kontrol Lompat
+            if (keys['ArrowUp'] && this.onGround) {
+                this.vy = -18;
+                this.onGround = false;
+                spawnParticles(this.x + this.w/2, this.y + this.h, '#fff', 5);
             }
 
-            // Logika Serangan Pedang
-            if (this.attackCooldown > 0) this.attackCooldown--;
+            // Kontrol Serangan Pedang
+            if (keys['KeyZ'] && this.attackTimer <= 0) {
+                this.isAttacking = true;
+                this.attackTimer = 25; 
+            }
+
             if (this.attackTimer > 0) {
                 this.attackTimer--;
-                
-                // Hitbox pedang diperbesar menutupi jarak yang luas
-                let attackReach = 280; 
-                let attackBox = {
-                    x: this.facingRight ? this.x + this.w : this.x - attackReach,
-                    y: this.y,
-                    w: attackReach,
-                    h: this.h 
-                };
-                
-                // Cek tabrakan pedang dengan musuh
-                for (let e of enemies) {
-                    if (!e.dead && checkCollision(attackBox, e)) {
-                        e.die();
-                        spawnParticles(e.x + e.w/2, e.y + e.h/2, '#00ffff', 15); // Efek tebasan kena
-                    }
-                }
+                if (this.attackTimer < 15) this.isAttacking = false; 
             }
 
-            // Gravity
-            this.vy += GRAVITY;
-            
-            // Logika Turun Cepat (Fast Fall) jika menekan Arrow Down di udara
-            if (keys.down && !this.onGround) {
-                this.vy += GRAVITY * 2.5; 
-            }
-            
-            if (this.vy > TERMINAL_VELOCITY) this.vy = TERMINAL_VELOCITY;
-
-            // X Movement & Logika Menunduk (Crouch) atau Turun (Drop Down)
-            if (keys.down && this.onGround) {
-                if (this.dropTimer <= 0) {
-                    // Cari pijakan saat ini
-                    let standingBlocks = blocks.filter(b => 
-                        (b.type === '1' || b.type === '8') && 
-                        this.x + 10 < b.x + b.w && this.x + this.w - 10 > b.x && 
-                        Math.abs((this.y + this.h) - b.y) <= 5
-                    );
-                    
-                    // Pastikan di bawah pijakan ini kosong (bukan tanah solid berlapis)
-                    let canDrop = standingBlocks.length > 0 && standingBlocks.every(sb => 
-                        !blocks.some(b2 => (b2.type === '1' || b2.type === '8') && b2.x === sb.x && b2.y === sb.y + TILE_SIZE)
-                    );
-
-                    if (canDrop) {
-                        this.dropTimer = 20; // Frame untuk menembus balok
-                        this.ignoredBlocks = standingBlocks;
-                        this.isCrouching = false; 
-                    } else {
-                        // Jika di bawahnya solid (lantai paling bawah), lakukan menunduk biasa
-                        this.isCrouching = true;
-                    }
-                } else {
-                    this.isCrouching = false;
-                }
-            } else {
-                this.isCrouching = false;
-            }
-
-            if (this.dropTimer > 0) {
-                this.dropTimer--;
-                if (this.dropTimer === 0) {
-                    this.ignoredBlocks = [];
-                }
-            }
-
-            // Ubah hitbox dan posisi Y saat menunduk
-            if (this.isCrouching && this.h === this.originalH) {
-                this.h = this.crouchH;
-                this.y += (this.originalH - this.crouchH);
-            } else if (!this.isCrouching && this.h === this.crouchH) {
-                this.h = this.originalH;
-                this.y -= (this.originalH - this.crouchH);
-            }
-
-            if (keys.left && !this.isCrouching) {
-                this.vx -= ACCELERATION;
-                this.facingRight = false;
-            } else if (keys.right && !this.isCrouching) {
-                this.vx += ACCELERATION;
-                this.facingRight = true;
-            } else {
-                this.vx *= FRICTION; 
-            }
-
-            if (this.vx > MAX_SPEED) this.vx = MAX_SPEED;
-            if (this.vx < -MAX_SPEED) this.vx = -MAX_SPEED;
-            if (Math.abs(this.vx) < 0.1) this.vx = 0;
-
-            // X Collision
-            this.x += this.vx;
-            if (this.x < 0) this.x = 0;
-            
-            for (let b of blocks) {
-                if ((b.type === '5' || b.type === '6') && checkCollision(this, b)) {
-                    levelComplete();
-                    return;
-                }
-                if ((b.type === '7' || b.type === '9') && checkCollision(this, b)) {
-                    this.die(); // Mati jika terkena jebakan duri atau BOM
-                }
-                if (this.ignoredBlocks.includes(b)) continue; // Tembus balok saat Drop Down
-                if ((b.type === '1' || b.type === '8') && checkCollision(this, b)) {
-                    if (this.vx > 0) { 
-                        this.x = b.x - this.w;
-                        this.vx = 0;
-                    } else if (this.vx < 0) { 
-                        this.x = b.x + b.w;
-                        this.vx = 0;
-                    }
-                }
-            }
-
-            // Y Collision
+            // Fisika
+            this.vy += 0.8;
             this.y += this.vy;
             this.onGround = false;
 
-            for (let b of blocks) {
-                if ((b.type === '7' || b.type === '9') && checkCollision(this, b)) {
-                    this.die(); // Mati jika menginjak jebakan duri atau BOM
-                }
-                if (this.ignoredBlocks.includes(b)) continue; // Tembus balok saat Drop Down
-                if ((b.type === '1' || b.type === '8') && checkCollision(this, b)) {
-                    if (this.vy > 0) { 
+            // Tabrakan Lantai 
+            for (let b of blocksArr) {
+                if (checkCollision(this, b)) {
+                    if (this.vy > 0 && this.y + this.h - this.vy <= b.y) { 
                         this.y = b.y - this.h;
                         this.vy = 0;
                         this.onGround = true;
-                        this.jumpCount = 0; // Reset double jump saat menyentuh tanah
-                    } else if (this.vy < 0) { 
+                    } else if (this.vy < 0) {
                         this.y = b.y + b.h;
                         this.vy = 0;
-                        b.hit(); 
                     }
                 }
             }
 
-            // Interactions
-            for (let e of enemies) {
-                if (!e.dead && checkCollision(this, e)) {
-                    if (this.vy > 0 && this.y + this.h < e.y + e.h / 2) {
-                        // Karakter hanya memantul seperti trampolin, BOLA TIDAK HANCUR saat diinjak
-                        this.vy = JUMP_FORCE * 0.7; 
-                        this.jumpCount = 0; // Reset double jump saat menginjak musuh
-                    } else {
-                        // Tidak ada pengurangan nyawa (Hanya menyentuh bola aman)
+            // Tabrakan Dinding 
+            this.x += this.vx;
+            for (let b of blocksArr) {
+                if (checkCollision(this, b)) {
+                    if (this.vx > 0) this.x = b.x - this.w; 
+                    if (this.vx < 0) this.x = b.x + b.w; 
+                }
+            }
+
+            // Cek Batas Level (Transisi ke Dunia Berikutnya)
+            if (this.x > levelLength) {
+                nextLevel();
+                return;
+            }
+
+            // Batas Kiri
+            if (this.x < 0) this.x = 0;
+
+            // Logika Pedang (Hitbox)
+            let attackHitbox = null;
+            if (this.isAttacking) {
+                let reach = 80;
+                attackHitbox = { x: this.facingRight ? this.x + this.w : this.x - reach, y: this.y, w: reach, h: this.h };
+            }
+
+            if (this.invincible > 0) this.invincible--;
+
+            // Tabrakan Potion (Ramuan Nyawa)
+            for (let p of potionsArr) {
+                if (!p.collected && checkCollision(this, p)) {
+                    p.collected = true;
+                    lives++;
+                    document.getElementById('lives-display').innerText = `NYAWA: ${lives}`;
+                    spawnParticles(p.x + p.w/2, p.y + p.h/2, '#2ecc71', 30);
+                    floatingTexts.push({ x: p.x, y: p.y, text: "+1 NYAWA", life: 60, vy: -2 });
+                    playPowerUpSound();
+                }
+            }
+
+            // Tabrakan Musuh
+            for (let e of enemiesArr) {
+                if (e.dead) continue;
+
+                // Cek tebasan pedang
+                if (attackHitbox && e.type !== 'giant_spike' && checkCollision(attackHitbox, e)) {
+                    e.dead = true;
+                    spawnParticles(e.x + e.w/2, e.y + e.h/2, e.color, 20);
+                    addScore(100, e.x, e.y);
+                    playSlashSound(); 
+                    continue;
+                }
+
+                // Cek tabrakan badan
+                if (checkCollision(this, e)) {
+                    if (this.vy > 0 && this.y + this.h - this.vy < e.y + e.h/3 && e.type !== 'giant_spike') {
+                        this.vy = -15; // Bounce
+                        e.dead = true;
+                        spawnParticles(e.x + e.w/2, e.y + e.h/2, e.color, 20);
+                        addScore(100, e.x, e.y);
+                    } else if (this.invincible === 0) {
+                        lives--;
+                        document.getElementById('lives-display').innerText = `NYAWA: ${lives}`;
+                        this.invincible = 60;
+                        this.vy = -10;
+                        this.vx = this.facingRight ? -10 : 10;
+                        
+                        if (lives <= 0) {
+                            gameRunning = false;
+                            document.getElementById('game-over').classList.remove('hidden');
+                        }
                     }
                 }
             }
 
-            for (let c of coinsList) {
-                if (!c.collected && checkCollision(this, c)) {
-                    c.collected = true;
-                    coins++;
-                    score += 50;
-                    spawnParticles(c.x + 4, c.y + 6, '#fbf236', 15);
-                    updateHUD();
-                }
-            }
-
-            // Pit death
+            // Jurang
             if (this.y > GAME_HEIGHT) {
-                this.die();
+                lives--;
+                document.getElementById('lives-display').innerText = `NYAWA: ${lives}`;
+                if (lives <= 0) {
+                    gameRunning = false;
+                    document.getElementById('game-over').classList.remove('hidden');
+                } else {
+                    this.x = cameraX + 300; this.y = 100; this.vy = 0; // Respawn aman
+                }
             }
         }
 
-        draw() {
-            if (this.isInvincible && Math.floor(this.invincibleTimer / 5) % 2 === 0) return;
-
-            let drawX = this.x - camera.x;
-            let drawY = this.y - camera.y;
-
+        drawHeroSprite() {
             ctx.save();
+            ctx.translate(this.x - cameraX + this.w/2, this.y + this.h/2);
+            if (!this.facingRight) ctx.scale(-1, 1);
             
-            // 0. LOGIKA ANIMASI MELANGKAH YANG DIPERHALUS (Smooth Procedural Animation)
-            let targetWalkAngle = 0;
-            let targetWalkBounce = 0;
-            
-            // Jika sedang di tanah, berlari, dan tidak sedang merunduk
-            if (this.onGround && Math.abs(this.vx) > 0.5 && !this.isCrouching) {
-                // Kecepatan putaran siklus menyesuaikan kecepatan lari
-                this.walkCycle += Math.abs(this.vx) * 0.012; 
-                targetWalkAngle = Math.sin(this.walkCycle) * 0.12; // Ayunan tubuh lebih natural
-                // Menggunakan kurva 1-cos untuk pantulan membulat yang sangat mulus (tidak tajam)
-                targetWalkBounce = (1 - Math.cos(this.walkCycle * 2)) * 8; 
-            } else if (!this.onGround && !this.isCrouching) {
-                // Postur dinamis saat melompat / jatuh di udara (dipertahankan lembut)
-                targetWalkAngle = this.vy > 0 ? 0.08 : -0.08; 
-                targetWalkBounce = 0;
-            } else {
-                // Diam
-                targetWalkAngle = 0;
-                targetWalkBounce = 0;
-            }
+            if (this.invincible > 0 && Math.floor(frameCount / 5) % 2 === 0) ctx.globalAlpha = 0.5;
 
-            // LERP (Linear Interpolation) - Rahasia untuk transisi tanpa patah-patah!
-            this.currentWalkAngle += (targetWalkAngle - this.currentWalkAngle) * 0.15;
-            this.currentWalkBounce += (targetWalkBounce - this.currentWalkBounce) * 0.2;
+            // Jubah (Cape)
+            ctx.fillStyle = '#c0392b';
+            ctx.beginPath();
+            let capeSway = this.vx !== 0 ? Math.sin(frameCount * 0.2) * 10 : 0;
+            ctx.moveTo(-this.w/2, -this.h/4);
+            ctx.lineTo(-this.w/2 - 20 - capeSway, this.h/2);
+            ctx.lineTo(-10, this.h/2 - 10);
+            ctx.fill();
 
-            // Pindah pusat poros koordinat tepat ke "Titik Kaki Tengah" (Bottom Center)
-            ctx.translate(drawX + this.w / 2, drawY + this.h - this.currentWalkBounce);
+            // Badan
+            ctx.fillStyle = '#2980b9'; ctx.fillRect(-15, -10, 30, 40);
+            ctx.fillStyle = '#f1c40f'; ctx.fillRect(-15, 20, 30, 8); // Sabuk
 
-            // Balikkan SELURUH objek (Karakter + Pedang) secara otomatis jika menghadap kiri
-            if (!this.facingRight) {
-                ctx.scale(-1, 1);
-            }
+            // Helm & Muka
+            ctx.fillStyle = '#e0e0e0'; ctx.beginPath(); ctx.arc(0, -25, 20, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = 'white'; ctx.beginPath(); ctx.moveTo(-15, -35); ctx.lineTo(-35, -45); ctx.lineTo(-15, -15); ctx.fill(); // Sayap helm
+            ctx.fillStyle = '#f39c12'; ctx.fillRect(-5, -35, 25, 20); // Muka
+            ctx.fillStyle = '#3498db'; ctx.fillRect(5, -30, 15, 8); // Visor
 
-            // Aplikasikan kemiringan berjalan yang sudah di-smoothing
-            ctx.rotate(this.currentWalkAngle);
+            // Kaki
+            let legWalk = this.vx !== 0 ? Math.sin(frameCount * 0.3) * 10 : 0;
+            ctx.fillStyle = '#ecf0f1';
+            ctx.fillRect(-10 + legWalk, 30, 10, 15);
+            ctx.fillRect(5 - legWalk, 30, 10, 15);
 
-            ctx.shadowColor = 'rgba(0,0,0,0.4)';
-            ctx.shadowBlur = 12;
-            ctx.shadowOffsetY = 10;
+            // Tangan
+            ctx.fillStyle = '#ecf0f1'; ctx.fillRect(0, -5, 12, 12);
 
-            // 1. MENGGAMBAR KARAKTER TERLEBIH DAHULU (Agar ada di belakang pedang)
-            if (this.image.complete && this.image.naturalHeight !== 0) {
-                ctx.save();
-                ctx.beginPath();
-                // Potong radius (Masking) dengan acuan dari kaki ke atas kepalanya (-this.w/2, -this.h)
-                ctx.roundRect(-this.w / 2, -this.h, this.w, this.h, 48); 
-                ctx.clip(); 
-                
-                // FLIP GAMBAR: Gambar dari URL aslinya menghadap kiri. 
-                // Kita wajib "Mirror" (-1) agar default-nya menghadap kanan mengikuti sistem game.
-                ctx.scale(-1, 1);
-                ctx.drawImage(this.image, -this.w / 2, -this.h, this.w, this.h);
-                ctx.restore();
-            }
-
-            // 2. MENGGAMBAR ANIMASI PEDANG DI ATAS/DEPAN KARAKTER 
+            // PEDANG
             if (this.attackTimer > 0) {
-                let p = 1 - (this.attackTimer / 15); // Progress 0 ke 1
-                
-                // --- MENGGAMBAR PEDANG FISIK ---
                 ctx.save();
-                // Posisikan engsel putaran pada lengan bahu (Relatif terhadap titik kaki tengah)
-                ctx.translate(50, -this.h / 2 + 50); 
-                
-                // Ayunkan pedang dari posisi atas-belakang ke depan-bawah
-                let startAngleSword = -Math.PI * 0.6; 
-                let endAngleSword = Math.PI * 0.3;    
-                ctx.rotate(startAngleSword + (endAngleSword - startAngleSword) * p);
-                
-                // Skala pedang diperbesar 1.8x menyesuaikan ukuran karakter
-                ctx.scale(1.8, 1.8);
+                ctx.translate(5, 0); 
+                let angle = this.isAttacking ? (Math.PI/2) * (1 - (this.attackTimer - 15)/10) : Math.PI/2;
+                ctx.rotate(angle);
 
-                // Matikan bayangan sejenak untuk menggambar pedang agar lebih solid
-                ctx.shadowBlur = 0; 
+                ctx.fillStyle = '#7f8c8d'; ctx.fillRect(-4, -40, 8, 15);
+                ctx.fillStyle = '#f1c40f'; ctx.fillRect(-10, -25, 20, 4);
 
-                // Gambar Gagang Pedang (Coklat)
-                ctx.fillStyle = '#5c4033';
-                ctx.fillRect(-30, -8, 40, 16);
+                ctx.shadowBlur = 15; ctx.shadowColor = '#00ffff'; ctx.fillStyle = '#e0ffff';
+                ctx.fillRect(-3, -110, 6, 85);
+                ctx.beginPath(); ctx.moveTo(-3, -110); ctx.lineTo(0, -120); ctx.lineTo(3, -110); ctx.fill();
                 
-                // Gambar Bilah Pedang (Perak/Abu-abu)
-                ctx.fillStyle = '#bdc3c7';
-                ctx.beginPath();
-                ctx.moveTo(17, -15);
-                ctx.lineTo(130, -10);
-                ctx.lineTo(160, 0); // Ujung Lancip Pedang
-                ctx.lineTo(130, 10);
-                ctx.lineTo(17, 15);
-                ctx.fill();
-                
-                // Gambar Garis Kilauan di Tengah Pedang (Putih)
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(17, -2, 110, 4);
-                
+                if (this.isAttacking && this.attackTimer > 20) {
+                    ctx.beginPath(); ctx.arc(0, 0, 100, -Math.PI/2, Math.PI/4);
+                    ctx.lineWidth = 10; ctx.strokeStyle = 'rgba(0, 255, 255, 0.5)'; ctx.stroke();
+                }
                 ctx.restore();
-                // --- AKHIR TAMBAHAN PEDANG FISIK ---
-
-                // EFEK TEBASAN CAHAYA BIRU 
-                ctx.save();
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                ctx.shadowColor = '#00ffff';
-                ctx.shadowBlur = 25;
-                
-                // Pindah poros putaran tebasan ke titik perut (0, -h/2)
-                ctx.translate(0, -this.h / 2);
-                
-                // Radius tebasan sinar biru membesar seukuran raksasa
-                let radiusOut = 240 + (p * 120); 
-                let radiusIn = radiusOut - 60; 
-                
-                ctx.beginPath();
-                let effectStartAngle = -Math.PI / 2; 
-                let sweep = Math.PI * 1.3 * p; 
-                
-                ctx.arc(0, 0, radiusOut, effectStartAngle, effectStartAngle + sweep, false);
-                ctx.arc(0, 0, radiusIn, effectStartAngle + sweep, effectStartAngle, true);
-                ctx.fill();
-                
-                ctx.restore();
+            } else {
+                ctx.fillStyle = '#7f8c8d'; ctx.fillRect(-4 + 10, -40, 8, 15);
+                ctx.fillStyle = '#f1c40f'; ctx.fillRect(-10 + 10, -25, 20, 4);
+                ctx.shadowBlur = 10; ctx.shadowColor = '#00ffff'; ctx.fillStyle = '#e0ffff';
+                ctx.fillRect(-2 + 10, -90, 4, 65);
+                ctx.shadowBlur = 0;
             }
-
-            ctx.restore(); // Kembalikan seluruh transformasi canvas ke semula
+            ctx.restore();
         }
     }
 
-    let player = new Player();
+    // --- SETUP LEVEL ---
+    let blocksArr = [];
+    let enemiesArr = [];
+    let potionsArr = [];
 
-    function loadLevel() {
-        blocks = [];
-        coinsList = [];
-        enemies = [];
-        let possibleSpawns = [];
-        
-        for (let row = 0; row < levelMap.length; row++) {
-            for (let col = 0; col < levelMap[row].length; col++) {
-                let char = levelMap[row][col];
-                let x = col * TILE_SIZE;
-                let y = row * TILE_SIZE;
-                
-                if (char !== ' ') {
-                    blocks.push(new Block(x, y, char));
-                }
-                
-                // Kumpulkan semua titik di mana musuh BISA muncul
-                // Syarat: Blok lantai ('1') yang atasnya kosong dan cukup jauh dari titik start pemain
-                if (char === '1' && row > 0 && levelMap[row-1][col] === ' ' && col > 15) {
-                    possibleSpawns.push({x: x, y: y});
-                }
-                
-                // Spawn koin acak
-                if (char === ' ' && row > 5 && Math.random() < 0.05 && levelMap[row+1] && levelMap[row+1][col] === '1') {
-                     coinsList.push(new Coin(x + 20, y)); 
-                }
+    function generateLevelWeather() {
+        weatherParticles = [];
+        if (currentLevel === 2 || currentLevel === 3) {
+            let count = currentLevel === 2 ? 100 : 50; // Salju banya, Abu vulkanik sedikit
+            for(let i=0; i<count; i++) {
+                weatherParticles.push({
+                    x: Math.random() * GAME_WIDTH,
+                    y: Math.random() * GAME_HEIGHT,
+                    s: Math.random() * 3 + 1,
+                    vy: currentLevel === 2 ? Math.random() * 2 + 1 : Math.random() * -2 - 1 // Salju turun, abu naik
+                });
             }
         }
+    }
+
+    function loadLevelMap() {
+        blocksArr = [];
+        enemiesArr = [];
+        potionsArr = [];
         
-        // --- LOGIKA MUNCULKAN TEPAT 10 MUSUH (DENGAN JARAK AMAN) ---
-        // 1. Acak urutan titik yang memungkinkan
-        possibleSpawns.sort(() => Math.random() - 0.5);
-        
-        let selectedSpawns = [];
-        let minDistance = TILE_SIZE * 12; // Minimal jarak antar musuh diperjauh menjadi 12 blok
-        
-        // 2. Filter agar tidak ada musuh yang spawn berdekatan
-        for (let spawn of possibleSpawns) {
-            let tooClose = false;
-            for (let sel of selectedSpawns) {
-                // Cek jarak Horizontal X
-                if (Math.abs(spawn.x - sel.x) < minDistance) {
-                    tooClose = true;
-                    break;
-                }
-            }
-            if (!tooClose) {
-                selectedSpawns.push(spawn);
-            }
-            // Berhenti jika sudah mengumpulkan 10 lokasi aman
-            if (selectedSpawns.length >= 10) break; 
-        }
-        
-        // 3. Masukkan musuh ke map (Dengan Kata Dijamin Unik!)
-        // Acak daftar kata negatif agar tidak ada yang sama di satu level
-        let shuffledWords = [...NEGATIVE_WORDS].sort(() => Math.random() - 0.5);
-        
-        for (let i = 0; i < selectedSpawns.length; i++) {
-            let spawn = selectedSpawns[i];
-            let word = shuffledWords[i]; // Jaminan setiap musuh mendapatkan kata unik
-            let theme = ENEMY_THEMES[i % ENEMY_THEMES.length];
+        // Buat Lantai Panjang (0 sampai levelLength)
+        let totalBlocks = Math.floor(levelLength / TILE) + 10;
+        for(let i = 0; i < totalBlocks; i++) {
+            // Jurang
+            if (i > 5 && i % 14 === 0) continue; 
+            if (i > 5 && i % 14 === 1) continue; 
+
+            blocksArr.push(new Block(i * TILE, GAME_HEIGHT - TILE * 2));
+            blocksArr.push(new Block(i * TILE, GAME_HEIGHT - TILE));
             
-            // Perhatikan tinggi (h = 320) agar musuh muncul pas di atas tanah
-            enemies.push(new Enemy(spawn.x, spawn.y - 320, word, theme));
+            // Platform melayang
+            if (i > 10 && i % 15 >= 12) {
+                blocksArr.push(new Block(i * TILE, GAME_HEIGHT - TILE * 5));
+            }
+        }
+
+        // Penempatan TEPAT 10 Musuh + Obstacle Spikes
+        let words = levelWords[currentLevel];
+        let enemySpacing = 800;
+        
+        // Tentukan tepat 2 lokasi acak untuk kemunculan bola duri
+        let spikeLocations = [];
+        while(spikeLocations.length < 2) {
+            let r = Math.floor(Math.random() * 9); // Ada 9 celah di antara 10 musuh
+            if(!spikeLocations.includes(r)) spikeLocations.push(r);
+        }
+        
+        // Tentukan tepat 2 lokasi acak untuk kemunculan ramuan botol hijau
+        let potionLocations = [];
+        while(potionLocations.length < 2) {
+            let r = Math.floor(Math.random() * 9); 
+            if(!potionLocations.includes(r)) potionLocations.push(r);
+        }
+        
+        for(let i = 0; i < 10; i++) {
+            let xPos = 800 + (i * enemySpacing);
+            let colorType = Math.random() > 0.5 ? 'red' : (Math.random() > 0.5 ? 'green' : 'purple');
+            
+            let yPos = GAME_HEIGHT - TILE*2 - 100;
+            if (Math.random() > 0.6) yPos -= TILE * 3; // Peluang ditaruh di platform atas
+            
+            enemiesArr.push(new Enemy(xPos, yPos, colorType, words[i]));
+
+            // Taruh duri rintangan di 2 lokasi yang sudah diacak
+            if (spikeLocations.includes(i)) {
+                let spikeX = xPos + 400;
+                enemiesArr.push(new Enemy(spikeX, GAME_HEIGHT - TILE*2 - 120, 'giant_spike', ''));
+                
+                // Tambahkan jembatan blok bantuan agar pemain bisa melompati duri
+                blocksArr.push(new Block(spikeX - TILE*2, GAME_HEIGHT - TILE*4));
+                blocksArr.push(new Block(spikeX, GAME_HEIGHT - TILE*5));
+                blocksArr.push(new Block(spikeX + TILE*2, GAME_HEIGHT - TILE*4));
+            }
+
+            // Taruh ramuan nyawa di lokasi acak yang melayang di udara
+            if (potionLocations.includes(i)) {
+                let potionX = xPos + 200;
+                potionsArr.push(new Potion(potionX, GAME_HEIGHT - TILE*5));
+            }
+        }
+        
+        // Buat dinding akhir agar tidak kebablasan sebelum fungsi nextLevel ke-trigger
+        blocksArr.push(new Block(levelLength + TILE, GAME_HEIGHT - TILE*3));
+        blocksArr.push(new Block(levelLength + TILE, GAME_HEIGHT - TILE*4));
+        blocksArr.push(new Block(levelLength + TILE, GAME_HEIGHT - TILE*5));
+
+        generateLevelWeather();
+        
+        // Show Level Text
+        const levelText = document.getElementById('level-indicator');
+        levelText.innerText = `LEVEL ${currentLevel}: ${levelNames[currentLevel]}`;
+        levelText.classList.remove('hidden');
+        setTimeout(() => levelText.classList.add('hidden'), 3000);
+        document.getElementById('level-display').innerText = `DUNIA: ${currentLevel}`;
+    }
+
+    function initGame(isFullReset = true, startLevel = 1) {
+        if (isFullReset) {
+            score = 0;
+            lives = 3;
+            currentLevel = startLevel;
+            document.getElementById('score-display').innerText = `SKOR: 00000`;
+            document.getElementById('lives-display').innerText = `NYAWA: 3`;
+        }
+        
+        particles = [];
+        floatingTexts = [];
+        cameraX = 0;
+        player = new Player();
+        
+        // Reset timing musik
+        if (audioCtx) nextNoteTime = audioCtx.currentTime + 0.1;
+        noteIndex = 0;
+
+        loadLevelMap();
+    }
+
+    function nextLevel() {
+        currentLevel++;
+        if (currentLevel > 3) {
+            // Victory
+            gameRunning = false;
+            document.getElementById('victory-screen').classList.remove('hidden');
+        } else {
+            playLevelUpSound();
+            initGame(false); // False = Jangan reset skor & nyawa
         }
     }
 
-    function updateCamera() {
-        let targetX = player.x - GAME_WIDTH / 3; 
-        targetX = Math.max(0, Math.min(targetX, mapWidth - GAME_WIDTH));
-        camera.x += (targetX - camera.x) * 0.1; 
-        camera.y = 0; 
-    }
-
+    // --- RENDERING ---
     function drawBackground() {
-        // Smooth gradient sky
-        let bgGrad = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
-        bgGrad.addColorStop(0, '#3498db');
-        bgGrad.addColorStop(1, '#85c1e9');
-        ctx.fillStyle = bgGrad;
+        let grad = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
+        
+        if (currentLevel === 1) { // City Light
+            grad.addColorStop(0, '#2b1f31'); grad.addColorStop(1, '#d35400');
+        } else if (currentLevel === 2) { // Ice View
+            grad.addColorStop(0, '#1abc9c'); grad.addColorStop(1, '#ecf0f1');
+        } else { // Volcano
+            grad.addColorStop(0, '#111111'); grad.addColorStop(1, '#c0392b');
+        }
+        
+        ctx.fillStyle = grad;
         ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-        // Vector Clouds
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        for(let i=0; i<8; i++) {
-            let cx = ((i * 400) - (camera.x * 0.15)) % (GAME_WIDTH + 300);
-            if (cx < -300) cx += GAME_WIDTH + 300;
-            
+        // Elemen Parallax
+        if (currentLevel === 1) {
+            // Laser Grid Merah 
+            ctx.strokeStyle = 'rgba(231, 76, 60, 0.4)'; ctx.lineWidth = 4;
+            let gridOffsetX = -(cameraX * 0.2) % 200;
             ctx.beginPath();
-            ctx.arc(cx, 200 + (i%3)*50, 60, 0, Math.PI*2);
-            ctx.arc(cx + 60, 200 + (i%3)*50 - 30, 75, 0, Math.PI*2);
-            ctx.arc(cx + 120, 200 + (i%3)*50, 60, 0, Math.PI*2);
-            ctx.fill();
+            for(let x = gridOffsetX; x < GAME_WIDTH; x += 200) { ctx.moveTo(x, 0); ctx.lineTo(x, GAME_HEIGHT); }
+            for(let y = 0; y < GAME_HEIGHT; y += 150) { ctx.moveTo(0, y); ctx.lineTo(GAME_WIDTH, y); }
+            ctx.stroke();
+
+            // Siluet Kota Jauh
+            ctx.fillStyle = '#4a235a';
+            let cityX = -(cameraX * 0.3) % 1000;
+            for(let i = -1; i < 5; i++) {
+                let start = cityX + i * 1000;
+                ctx.fillRect(start + 50, GAME_HEIGHT - 300, 150, 300);
+                ctx.fillRect(start + 250, GAME_HEIGHT - 400, 100, 400);
+                ctx.fillRect(start + 400, GAME_HEIGHT - 250, 200, 250);
+            }
+        } else if (currentLevel === 2) {
+            // Gunung Es Parallax
+            ctx.fillStyle = '#bdc3c7';
+            let mountX = -(cameraX * 0.2) % 800;
+            for(let i = -1; i < 5; i++) {
+                let start = mountX + i * 800;
+                ctx.beginPath(); ctx.moveTo(start + 200, GAME_HEIGHT); ctx.lineTo(start + 400, GAME_HEIGHT - 400); ctx.lineTo(start + 600, GAME_HEIGHT); ctx.fill();
+                ctx.fillStyle = '#ecf0f1'; // Salju pucak
+                ctx.beginPath(); ctx.moveTo(start + 400, GAME_HEIGHT - 400); ctx.lineTo(start + 450, GAME_HEIGHT - 300); ctx.lineTo(start + 350, GAME_HEIGHT - 300); ctx.fill();
+                ctx.fillStyle = '#bdc3c7';
+            }
+        } else if (currentLevel === 3) {
+            // Gunung Berapi Parallax
+            ctx.fillStyle = '#2c3e50';
+            let volX = -(cameraX * 0.2) % 1000;
+            for(let i = -1; i < 4; i++) {
+                let start = volX + i * 1000;
+                ctx.beginPath(); ctx.moveTo(start + 100, GAME_HEIGHT); ctx.lineTo(start + 500, GAME_HEIGHT - 500); ctx.lineTo(start + 900, GAME_HEIGHT); ctx.fill();
+                // Lava mengalir
+                ctx.fillStyle = '#e67e22';
+                ctx.beginPath(); ctx.moveTo(start + 500, GAME_HEIGHT - 500); ctx.lineTo(start + 530, GAME_HEIGHT - 300); ctx.lineTo(start + 470, GAME_HEIGHT - 300); ctx.fill();
+                ctx.fillStyle = '#2c3e50';
+            }
         }
 
-        // Vector Hills
-        ctx.fillStyle = '#27ae60';
-        for(let i=0; i<12; i++) {
-            let hx = ((i * 300) - (camera.x * 0.4)) % (GAME_WIDTH + 400);
-            if (hx < -400) hx += GAME_WIDTH + 400;
-             
-            ctx.beginPath();
-            let radius = 250 + (i%2)*80;
-            ctx.arc(hx, GAME_HEIGHT + 50, radius, Math.PI, 0);
-            ctx.fill();
+        // Draw Weather Particles (Snow / Embers)
+        if (currentLevel === 2 || currentLevel === 3) {
+            ctx.fillStyle = currentLevel === 2 ? '#ffffff' : '#f39c12';
+            weatherParticles.forEach(p => {
+                p.y += p.vy;
+                // Angin dipengaruhi arah kamera
+                p.x += (currentLevel === 2 ? 1 : -1) - (player.vx * 0.1); 
+                
+                // Wrap around
+                if (p.y > GAME_HEIGHT) p.y = 0;
+                if (p.y < 0) p.y = GAME_HEIGHT;
+                if (p.x > GAME_WIDTH) p.x = 0;
+                if (p.x < 0) p.x = GAME_WIDTH;
+
+                ctx.globalAlpha = Math.random() * 0.5 + 0.3;
+                ctx.fillRect(p.x, p.y, p.s, p.s);
+            });
+            ctx.globalAlpha = 1;
         }
     }
 
-    function updateHUD() {
-        scoreDisplay.innerText = `SCORE: ${score}`;
-        coinDisplay.innerText = `COINS: ${coins}`;
-        livesDisplay.innerText = `LIVES: ${lives}`;
-    }
+    function animate() {
+        if (!gameRunning) return;
+        frameCount++;
+        
+        // --- JADWAL MUSIK LATAR (BGM) ---
+        if (audioCtx) {
+            if (nextNoteTime === 0) nextNoteTime = audioCtx.currentTime + 0.1;
+            // Jadwalkan nada berikutnya jika waktunya sudah dekat
+            while (nextNoteTime < audioCtx.currentTime + 0.1) {
+                let notes = bgmTrack[noteIndex];
+                
+                // Melodi utama (Square wave, sedikit dipanjangkan)
+                if (notes[0] !== 0) playNote(notes[0], 0.12, 'square', 0.04); 
+                // Bass line (Triangle wave untuk efek bass 8-bit klasik yang lebih bulat)
+                if (notes[1] !== 0) playNote(notes[1], 0.15, 'triangle', 0.07); 
+                
+                noteIndex = (noteIndex + 1) % bgmTrack.length;
+                // Tempo lagu diperlambat dari 100ms menjadi 180ms per nada
+                nextNoteTime += 0.18; 
+            }
+        }
 
-    function resetGame() {
-        score = 0;
-        coins = 0;
-        lives = 3;
-        player.reset();
-        loadLevel();
-        updateHUD();
-        camera.x = 0;
-    }
-
-    function gameLoop() {
-        if (gameState !== 'playing') return;
+        drawBackground();
 
         player.update();
-        updateCamera();
-        
-        blocks.forEach(b => b.update());
-        coinsList.forEach(c => c.update());
-        
-        enemies = enemies.filter(e => e.deadTimer < 30);
-        enemies.forEach(e => e.update());
-        
-        particles = particles.filter(p => p.life > 0);
-        particles.forEach(p => p.update());
+        // Kamera mengikuti pemain, tapi tidak boleh mundur dari 0
+        let targetCamX = player.x - GAME_WIDTH / 3;
+        if (targetCamX > cameraX) cameraX = targetCamX; 
+        if (cameraX < 0) cameraX = 0;
 
-        ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-        drawBackground();
-        
-        blocks.forEach(b => {
-            if (b.x > camera.x - TILE_SIZE*2 && b.x < camera.x + GAME_WIDTH) b.draw();
+        // Draw Lingkungan
+        blocksArr.forEach(b => b.draw());
+        potionsArr.forEach(p => p.draw());
+        enemiesArr.forEach(e => {
+            e.update(); // Panggil update pergerakan musuh
+            e.draw();
         });
-        coinsList.forEach(c => {
-             if (c.x > camera.x - TILE_SIZE*2 && c.x < camera.x + GAME_WIDTH) c.draw();
-        });
-        enemies.forEach(e => {
-             if (e.x > camera.x - TILE_SIZE*2 && e.x < camera.x + GAME_WIDTH) e.draw();
-        });
-        
-        particles.forEach(p => p.draw());
-        player.draw();
+        player.drawHeroSprite();
 
-        animationId = requestAnimationFrame(gameLoop);
-    }
-
-    function startGame() {
-        mainMenu.classList.add('hidden');
-        gameOverMenu.classList.add('hidden');
-        victoryMenu.classList.add('hidden');
-        gameState = 'playing';
-        resetGame();
-        gameLoop();
-    }
-
-    function gameOver() {
-        gameState = 'gameover';
-        cancelAnimationFrame(animationId);
-        gameOverMenu.classList.remove('hidden');
-        if (score > highScore) {
-            highScore = score;
-            localStorage.setItem('giantPlatHighScore', highScore);
-            document.getElementById('high-score-display').innerText = `NEW HIGH SCORE: ${highScore}`;
+        // Update & Draw Partikel (Ledakan)
+        for (let i = particles.length - 1; i >= 0; i--) {
+            let p = particles[i];
+            p.x += p.vx; p.y += p.vy; p.life--;
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = p.life / 50;
+            ctx.fillRect(p.x - cameraX, p.y, p.size, p.size);
+            ctx.globalAlpha = 1;
+            if (p.life <= 0) particles.splice(i, 1);
         }
-    }
 
-    function levelComplete() {
-        gameState = 'victory';
-        cancelAnimationFrame(animationId);
-        victoryMenu.classList.remove('hidden');
-        
-        score += lives * 1000;
-        score += coins * 10;
-        document.getElementById('final-score').innerText = `SCORE: ${score}`;
-        
-        if (score > highScore) {
-            highScore = score;
-            localStorage.setItem('giantPlatHighScore', highScore);
+        // Update & Draw Floating Text
+        for (let i = floatingTexts.length - 1; i >= 0; i--) {
+            let ft = floatingTexts[i];
+            ft.y += ft.vy; ft.life--;
+            ctx.fillStyle = 'white';
+            ctx.font = '20px "Press Start 2P"';
+            ctx.textAlign = 'center';
+            ctx.globalAlpha = ft.life / 60;
+            ctx.fillText(ft.text, ft.x - cameraX, ft.y);
+            ctx.globalAlpha = 1;
+            if (ft.life <= 0) floatingTexts.splice(i, 1);
         }
+
+        requestAnimationFrame(animate);
     }
+    
+    // --- EVENT LISTENERS ---
+    document.querySelectorAll('.world-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            initAudio(); 
+            let selectedLevel = parseInt(e.target.getAttribute('data-level'));
+            document.getElementById('main-menu').classList.add('hidden');
+            initGame(true, selectedLevel);
+            gameRunning = true;
+            animate();
+        });
+    });
 
-    // Button Event Listeners
-    document.getElementById('start-btn').addEventListener('click', startGame);
-    document.getElementById('restart-btn').addEventListener('click', startGame);
-    document.getElementById('next-btn').addEventListener('click', startGame); 
+    document.getElementById('restart-btn').addEventListener('click', () => {
+        initAudio(); 
+        document.getElementById('game-over').classList.add('hidden');
+        initGame(true, currentLevel); // Coba lagi akan mengulang level yang sama
+        gameRunning = true;
+        animate();
+    });
 
-    loadLevel();
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+        initAudio(); 
+        document.getElementById('victory-screen').classList.add('hidden');
+        document.getElementById('main-menu').classList.remove('hidden'); // Kembali ke pilihan dunia
+        currentLevel = 1;
+        drawBackground(); 
+    });
+
+    // Inisialisasi awal render latar belakang menu
     drawBackground();
-    player.draw();
-
 </script>
 </body>
 </html>
