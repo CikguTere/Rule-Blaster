@@ -580,6 +580,10 @@
                 this.w = TILE * 2; this.h = 30; 
                 this.color = '#7f8c8d'; 
                 this.vx = 0; this.vy = 0;
+            } else if (type === 'fire_floor') {
+                this.w = TILE * 2; this.h = 40; 
+                this.color = '#e74c3c'; // Merah Api
+                this.vx = 0; this.vy = 0;
             } else if (type === 'slime') {
                 this.w = 80; this.h = 60;
                 this.color = '#2ecc71'; // Lendir hijau
@@ -596,7 +600,7 @@
         }
 
         update() {
-            if (this.dead || this.type === 'floor_spike') return;
+            if (this.dead || this.type === 'floor_spike' || this.type === 'fire_floor') return;
             
             if (this.type === 'slime') {
                 // Mekanik Mengejar: Bergerak mendekati posisi X pemain
@@ -645,6 +649,28 @@
                 }
                 ctx.fillStyle = '#7f8c8d';
                 ctx.fillRect(-this.w/2, this.h/2 - 5, this.w, 5);
+
+            } else if (this.type === 'fire_floor') {
+                // Dasar Batu Lava
+                ctx.fillStyle = '#2c3e50';
+                ctx.fillRect(-this.w/2, this.h/2 - 10, this.w, 10);
+                
+                // Animasi Lidah Api
+                let numFlames = 6;
+                let flameW = this.w / numFlames;
+                for(let f = 0; f < numFlames; f++) {
+                    // Warna berkedip acak agar terlihat seperti api sungguhan
+                    if ((f + frameCount) % 3 === 0) { ctx.fillStyle = '#e74c3c'; }
+                    else if ((f + frameCount) % 3 === 1) { ctx.fillStyle = '#f39c12'; }
+                    else { ctx.fillStyle = '#d35400'; }
+                    
+                    let flameH = 15 + Math.random() * 20; // Tinggi api dinamis
+                    ctx.beginPath();
+                    ctx.moveTo(-this.w/2 + f*flameW, this.h/2 - 10);
+                    ctx.lineTo(-this.w/2 + (f+0.5)*flameW, this.h/2 - 10 - flameH);
+                    ctx.lineTo(-this.w/2 + (f+1)*flameW, this.h/2 - 10);
+                    ctx.fill();
+                }
 
             } else if (this.type === 'slime') {
                 let scale = 1 + Math.sin(frameCount * 0.1 + this.x) * 0.1;
@@ -760,6 +786,10 @@
             this.isAttacking = false;
             this.attackTimer = 0;
             this.invincible = 0;
+            
+            // Properti untuk Double Jump
+            this.jumpCount = 0; 
+            this.upKeyReleased = true;
         }
 
         update() {
@@ -767,9 +797,29 @@
             else if (keys['ArrowLeft']) { this.vx = -7; this.facingRight = false; }
             else { this.vx = 0; }
 
-            if (keys['ArrowUp'] && this.onGround) {
-                this.vy = -18;
-                this.onGround = false;
+            // Logika Double Jump Presisi
+            if (keys['ArrowUp']) {
+                if (this.upKeyReleased) {
+                    if (this.onGround) {
+                        this.vy = -18; // Lompatan pertama
+                        this.onGround = false;
+                        this.jumpCount = 1;
+                        this.upKeyReleased = false;
+                        spawnParticles(this.x + this.w/2, this.y + this.h, '#fff', 5);
+                    } else if (this.jumpCount < 2) {
+                        this.vy = -15; // Lompatan kedua di udara (Double Jump)
+                        this.jumpCount++;
+                        this.upKeyReleased = false;
+                        spawnParticles(this.x + this.w/2, this.y + this.h, '#f1c40f', 15); // Efek partikel kuning saat double jump
+                    }
+                }
+            } else {
+                this.upKeyReleased = true; // Kunci lompat dilepas, siap untuk lompatan berikutnya
+            }
+
+            // Jika pemain jatuh tanpa melompat (misal: berjalan melewati tepi jurang)
+            if (!this.onGround && this.vy > 0 && this.jumpCount === 0) {
+                this.jumpCount = 1; // Kurangi jatah lompat agar hanya bisa 1x lompat mid-air
             }
 
             if (keys['KeyZ'] && this.attackTimer <= 0) {
@@ -794,6 +844,7 @@
                         this.y = b.y - this.h;
                         this.vy = 0;
                         this.onGround = true;
+                        this.jumpCount = 0; // Reset jatah double jump setelah menyentuh tanah
                         platform = b;
                     } else if (this.vy < 0) {
                         this.y = b.y + b.h;
@@ -889,8 +940,8 @@
             for (let e of enemiesArr) {
                 if (e.dead) continue;
 
-                // Pedang tidak bisa menembus Floor Spike
-                if (attackHitbox && e.type !== 'floor_spike' && checkCollision(attackHitbox, e)) {
+                // Pedang tidak bisa menembus jebakan lantai
+                if (attackHitbox && e.type !== 'floor_spike' && e.type !== 'fire_floor' && checkCollision(attackHitbox, e)) {
                     e.dead = true;
                     spawnBombasticExplosion(e.x + e.w/2, e.y + e.h/2, e.color); 
                     addScore(100, e.x, e.y);
@@ -899,8 +950,8 @@
                 }
 
                 if (checkCollision(this, e)) {
-                    // Kalau tipe lantai duri, pemain selalu kena damage tanpa bounce dari atas
-                    if (e.type === 'floor_spike') {
+                    // Kalau tipe jebakan lantai, pemain selalu kena damage tanpa bounce dari atas
+                    if (e.type === 'floor_spike' || e.type === 'fire_floor') {
                         if (this.invincible === 0) {
                             lives--;
                             document.getElementById('lives-display').innerText = `NYAWA: ${lives}`;
@@ -1091,15 +1142,20 @@
                 enemiesArr.push(new Enemy(xPos, yPos, colorType, words[i]));
             }
 
-            // Jebakan Lantai Duri (diletakkan menempel di blok lantai/menggantung)
+            // Jebakan Lantai Duri atau Api (diletakkan menempel di blok lantai)
             if (spikeLocations.includes(i)) {
                 let spikeX = xPos + 300;
                 
-                // Bangun sebuah kotak blok di tengah jalan lalu letakkan duri di atasnya
+                // Bangun sebuah kotak blok di tengah jalan lalu letakkan jebakan di atasnya
                 blocksArr.push(new Block(spikeX, GAME_HEIGHT - TILE*3));
                 blocksArr.push(new Block(spikeX + TILE, GAME_HEIGHT - TILE*3));
-                // Duri
-                enemiesArr.push(new Enemy(spikeX, GAME_HEIGHT - TILE*3 - 30, 'floor_spike', ''));
+                
+                // Munculkan Jebakan API di Level 3 (Volcano), dan DURI di level lainnya
+                if (currentLevel === 3) {
+                    enemiesArr.push(new Enemy(spikeX, GAME_HEIGHT - TILE*3 - 40, 'fire_floor', ''));
+                } else {
+                    enemiesArr.push(new Enemy(spikeX, GAME_HEIGHT - TILE*3 - 30, 'floor_spike', ''));
+                }
             }
 
             if (potionLocations.includes(i)) {
