@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Retro Cyberpunk Platformer</title>
+    <title>Rule Blaster</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
@@ -20,13 +20,14 @@
         
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(0, 0, 0, 0.85); z-index: 10; text-align: center;}
         .hidden { display: none !important; }
+        
         h1 { color: #fff; text-shadow: 4px 4px 0 #d35400; font-size: clamp(20px, 4vw, 50px); margin-bottom: 20px; line-height: 1.5; }
-        p.subtitle { font-size: 14px; margin-bottom: 30px; color: #f1c40f; line-height: 1.8; max-width: 600px; padding: 0 20px;}
+        p.subtitle { font-size: 12px; margin-bottom: 15px; color: #f1c40f; line-height: 1.5; max-width: 600px; padding: 0 20px;}
         
         .btn { 
             background: #3498db; color: white; border: 4px solid #fff; border-radius: 0; 
-            padding: 15px 30px; font-family: 'Press Start 2P', cursive; font-size: clamp(12px, 2vw, 20px); 
-            cursor: pointer; box-shadow: 4px 4px 0 #1f618d; transition: all 0.1s; margin-bottom: 10px;
+            padding: 10px 20px; font-family: 'Press Start 2P', cursive; font-size: clamp(10px, 2vw, 16px); 
+            cursor: pointer; box-shadow: 4px 4px 0 #1f618d; transition: all 0.1s; margin-bottom: 5px;
         }
         .btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0; }
         
@@ -78,6 +79,76 @@
         /* CSS Bypass (Override jika pemain memaksakan masuk lewat tombol) */
         body.force-landscape #portrait-warning { display: none !important; }
         body.force-landscape #game-container { display: block !important; }
+
+        /* ------------------------------------------- */
+        /* --- BACKGROUND MENU UTAMA RETRO ARCADE ---- */
+        /* ------------------------------------------- */
+        #main-menu {
+            background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
+            overflow: hidden;
+        }
+        
+        /* Matahari Retro (Neon Sun) */
+        #main-menu::after {
+            content: '';
+            position: absolute;
+            top: 15%; left: 50%;
+            transform: translateX(-50%);
+            width: 250px; height: 250px;
+            border-radius: 50%;
+            background: linear-gradient(to bottom, #ff007f 40%, #ff8c00 100%);
+            box-shadow: 0 0 60px #ff007f;
+            z-index: 1;
+        }
+
+        /* Lantai Grid Laser Bergerak (Perspective 3D) */
+        #main-menu::before {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; width: 100%; height: 50%;
+            background-image:
+                linear-gradient(rgba(0, 255, 255, 0.8) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.8) 2px, transparent 2px);
+            background-size: 50px 50px;
+            background-position: center bottom;
+            transform: perspective(300px) rotateX(60deg);
+            transform-origin: bottom center;
+            z-index: 2;
+            animation: gridMove 1s linear infinite;
+        }
+        
+        @keyframes gridMove {
+            0% { background-position: 0 0, 0 0; }
+            100% { background-position: 0 50px, 0 0; }
+        }
+
+        /* Pastikan elemen UI menu berada di atas background animasi */
+        #main-menu > * {
+            position: relative;
+            z-index: 5; 
+        }
+
+        /* Modifikasi judul khusus di main menu agar lebih mencolok */
+        #main-menu h1 {
+            color: #fff;
+            text-shadow: 
+                4px 4px 0 #000, 
+                -2px -2px 0 #ff007f, 
+                2px -2px 0 #ff007f, 
+                -2px 2px 0 #ff007f, 
+                2px 2px 0 #ff007f,
+                6px 6px 0px rgba(0,255,255,0.8);
+            font-size: clamp(30px, 6vw, 70px);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        
+        #main-menu .subtitle {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #ff8c00;
+        }
     </style>
 </head>
 <body>
@@ -104,13 +175,15 @@
     <div id="controls-hint">PANAH: Gerak/Lompat | Z: Serang Pedang</div>
     
     <div id="main-menu" class="overlay">
-        <h1>PEMBERANTAS<br>SIFAT BURUK</h1>
+        <h1>RULE<br>BLASTER</h1>
         <p class="subtitle">Pilih dunia yang ingin kamu bersihkan dari sifat buruk!</p>
         <div style="display: flex; flex-direction: column; gap: 10px;">
             <button class="btn world-btn" data-level="1" style="background: #d35400;">WORLD 1: CITY LIGHT</button>
             <button class="btn world-btn" data-level="2" style="background: #1abc9c;">WORLD 2: ICE VIEW</button>
             <button class="btn world-btn" data-level="3" style="background: #c0392b;">WORLD 3: VOLCANO</button>
         </div>
+        <!-- Credit Creator -->
+        <div style="margin-top: 25px; font-size: 12px; color: #fff; text-shadow: 2px 2px 0 #000, 0 0 10px #0ff; letter-spacing: 1px;">Creator : Cikgu Tere</div>
     </div>
     
     <div id="game-over" class="overlay hidden">
@@ -349,11 +422,25 @@
 
     // --- KELAS GAME ---
     class Block {
-        constructor(x, y) {
-            this.x = x; this.y = y; this.w = TILE; this.h = TILE;
+        constructor(x, y, w = TILE, h = TILE, isMoving = false, moveRange = 0, speed = 0) {
+            this.x = x; this.y = y; this.w = w; this.h = h;
+            this.isMoving = isMoving;
+            this.startX = x;
+            this.moveRange = moveRange;
+            this.vx = speed;
         }
+
+        update() {
+            if (this.isMoving) {
+                this.x += this.vx;
+                if (Math.abs(this.x - this.startX) > this.moveRange) {
+                    this.vx *= -1; // Balik arah saat mencapai batas range
+                }
+            }
+        }
+
         draw() {
-            if (this.x - cameraX < -TILE || this.x - cameraX > GAME_WIDTH) return;
+            if (this.x - cameraX < -this.w || this.x - cameraX > GAME_WIDTH) return;
             
             let mainColor, topColor, borderColor;
             
@@ -365,15 +452,32 @@
                 mainColor = '#2c3e50'; topColor = '#e74c3c'; borderColor = '#000000';
             }
 
+            // Ganti warna menjadi besi/metalik jika ini adalah blok bergerak (slider)
+            if (this.isMoving) {
+                mainColor = '#7f8c8d'; 
+                topColor = '#f1c40f'; // Warna peringatan kuning di pijakan
+                borderColor = '#2c3e50';
+            }
+
             ctx.fillStyle = mainColor;
             ctx.fillRect(this.x - cameraX, this.y, this.w, this.h);
             ctx.strokeStyle = borderColor;
             ctx.lineWidth = 2;
             ctx.strokeRect(this.x - cameraX, this.y, this.w, this.h);
             
-            ctx.beginPath(); ctx.moveTo(this.x - cameraX, this.y + TILE/2); ctx.lineTo(this.x - cameraX + TILE, this.y + TILE/2); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(this.x - cameraX + TILE/2, this.y); ctx.lineTo(this.x - cameraX + TILE/2, this.y + TILE/2); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(this.x - cameraX + TILE/4, this.y + TILE/2); ctx.lineTo(this.x - cameraX + TILE/4, this.y + TILE); ctx.stroke();
+            // Pola ukiran
+            if (!this.isMoving) {
+                ctx.beginPath(); ctx.moveTo(this.x - cameraX, this.y + this.h/2); ctx.lineTo(this.x - cameraX + this.w, this.y + this.h/2); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(this.x - cameraX + this.w/2, this.y); ctx.lineTo(this.x - cameraX + this.w/2, this.y + this.h/2); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(this.x - cameraX + this.w/4, this.y + this.h/2); ctx.lineTo(this.x - cameraX + this.w/4, this.y + this.h); ctx.stroke();
+            } else {
+                // Pola besi/baut untuk slider
+                ctx.fillStyle = '#95a5a6';
+                ctx.fillRect(this.x - cameraX + 10, this.y + 10, this.w - 20, this.h - 20);
+                ctx.fillStyle = borderColor;
+                ctx.beginPath(); ctx.arc(this.x - cameraX + 15, this.y + 15, 3, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(this.x - cameraX + this.w - 15, this.y + 15, 3, 0, Math.PI*2); ctx.fill();
+            }
             
             ctx.fillStyle = topColor;
             ctx.fillRect(this.x - cameraX, this.y, this.w, 10);
@@ -532,12 +636,15 @@
             this.y += this.vy;
             this.onGround = false;
 
+            // Tabrakan Lantai 
+            let platform = null;
             for (let b of blocksArr) {
                 if (checkCollision(this, b)) {
                     if (this.vy > 0 && this.y + this.h - this.vy <= b.y) { 
                         this.y = b.y - this.h;
                         this.vy = 0;
                         this.onGround = true;
+                        platform = b;
                     } else if (this.vy < 0) {
                         this.y = b.y + b.h;
                         this.vy = 0;
@@ -545,6 +652,12 @@
                 }
             }
 
+            // Jika sedang berdiri di blok slider, geser posisi pemain mengikuti blok
+            if (platform && platform.isMoving) {
+                this.x += platform.vx; 
+            }
+
+            // Tabrakan Dinding 
             this.x += this.vx;
             for (let b of blocksArr) {
                 if (checkCollision(this, b)) {
@@ -709,14 +822,33 @@
         potionsArr = [];
         
         let totalBlocks = Math.floor(levelLength / TILE) + 10;
+        let pyramidIndex = 40; // Lokasi pembuatan tangga piramida (sebelum bertemu musuh kedua)
+
         for(let i = 0; i < totalBlocks; i++) {
-            if (i > 5 && i % 14 === 0) continue; 
-            if (i > 5 && i % 14 === 1) continue; 
+            // Jurang selebar 4 blok yang memiliki Blok Slider di tengahnya
+            if (i > 10 && i % 25 >= 0 && i % 25 <= 3) {
+                if (i % 25 === 1) { 
+                    // Membuat Slider: x, y, lebar=2 tile, tinggi=1 tile, isMoving=true, range=150px, speed=2
+                    blocksArr.push(new Block(i * TILE, GAME_HEIGHT - TILE * 2, TILE * 2, TILE, true, 150, 2));
+                }
+                continue; 
+            }
 
             blocksArr.push(new Block(i * TILE, GAME_HEIGHT - TILE * 2));
             blocksArr.push(new Block(i * TILE, GAME_HEIGHT - TILE));
             
-            if (i > 10 && i % 15 >= 12) {
+            // Platform gantung agar area tidak terlalu kosong
+            if (i > 10 && i % 15 >= 12 && (i % 25 > 3)) {
+                blocksArr.push(new Block(i * TILE, GAME_HEIGHT - TILE * 5));
+            }
+
+            // Membangun Rintangan Tangga Bertumpuk (Piramida)
+            if (i === pyramidIndex) {
+                // Layer bawah (5 blok mendatar)
+                for(let j = -2; j <= 2; j++) blocksArr.push(new Block((i+j) * TILE, GAME_HEIGHT - TILE * 3));
+                // Layer tengah (3 blok mendatar)
+                for(let j = -1; j <= 1; j++) blocksArr.push(new Block((i+j) * TILE, GAME_HEIGHT - TILE * 4));
+                // Puncak tangga (1 blok)
                 blocksArr.push(new Block(i * TILE, GAME_HEIGHT - TILE * 5));
             }
         }
@@ -899,7 +1031,10 @@
         if (targetCamX > cameraX) cameraX = targetCamX; 
         if (cameraX < 0) cameraX = 0;
 
-        blocksArr.forEach(b => b.draw());
+        blocksArr.forEach(b => {
+            b.update(); // Update pergerakan slider
+            b.draw();
+        });
         potionsArr.forEach(p => p.draw());
         enemiesArr.forEach(e => {
             e.update(); 
