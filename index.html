@@ -33,12 +33,15 @@
         
         #hud { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; font-size: clamp(10px, 2vw, 20px); z-index: 5; pointer-events: none; text-shadow: 3px 3px 0 #000; color: white; }
         
-        #btn-fullscreen {
-            background: transparent; border: 2px solid white; color: white;
-            font-family: 'Press Start 2P', cursive; padding: 5px 10px; cursor: pointer;
-            font-size: 14px; margin-left: 15px; pointer-events: auto;
+        /* Tombol HUD Baru (Fullscreen, Pause, Exit) */
+        .hud-btn {
+            background: rgba(0,0,0,0.5); border: 2px solid white; color: white;
+            font-family: 'Press Start 2P', cursive; padding: 5px 8px; cursor: pointer;
+            font-size: clamp(10px, 2vw, 14px); margin-left: 10px; pointer-events: auto;
         }
-        #btn-fullscreen:active { background: white; color: black; }
+        .hud-btn:active { background: white; color: black; }
+        .hud-btn.exit { border-color: #e74c3c; color: #e74c3c; }
+        .hud-btn.exit:active { background: #e74c3c; color: white; }
 
         #controls-hint { position: absolute; bottom: 20px; width: 100%; text-align: center; font-size: 12px; color: rgba(255,255,255,0.7); pointer-events: none;}
         
@@ -157,7 +160,9 @@
         <div id="level-display">DUNIA: 1</div>
         <div style="display: flex; align-items: center;">
             <div id="lives-display">NYAWA: 3</div>
-            <button id="btn-fullscreen" title="Layar Penuh">⛶</button>
+            <button id="btn-pause" class="hud-btn" title="Jeda">⏸</button>
+            <button id="btn-exit" class="hud-btn exit" title="Keluar">✖</button>
+            <button id="btn-fullscreen" class="hud-btn" title="Layar Penuh">⛶</button>
         </div>
     </div>
     
@@ -187,6 +192,13 @@
         <button class="btn" id="play-again-btn">MAIN LAGI</button>
     </div>
 
+    <!-- Menu Jeda (Pause Screen) -->
+    <div id="pause-screen" class="overlay hidden">
+        <h1 style="color: #f1c40f; text-shadow: 4px 4px 0 #d35400;">GAME DIJEDA</h1>
+        <button class="btn" id="resume-btn" style="background: #2ecc71;">LANJUTKAN</button>
+        <button class="btn" id="quit-btn" style="background: #e74c3c;">KELUAR KE MENU</button>
+    </div>
+
     <div id="touch-controls">
         <div class="touch-btn-group">
             <div class="touch-btn" id="btn-left">◀</div>
@@ -214,6 +226,7 @@
     let score = 0;
     let currentLevel = 1;
     let gameRunning = false;
+    let isPaused = false; // Status jeda game
     let frameCount = 0;
     const levelLength = 11000; 
     let player;
@@ -1203,6 +1216,7 @@
         particles = [];
         floatingTexts = [];
         cameraX = 0;
+        isPaused = false; // Reset status pause
         player = new Player();
         
         if (audioCtx) nextNoteTime = audioCtx.currentTime + 0.1;
@@ -1301,7 +1315,7 @@
     }
 
     function animate() {
-        if (!gameRunning) return;
+        if (!gameRunning || isPaused) return; // Hentikan render loop saat game over atau pause
         frameCount++;
         
         if (audioCtx) {
@@ -1370,7 +1384,39 @@
         requestAnimationFrame(animate);
     }
     
+    // --- FUNGSI PAUSE & EXIT ---
+    function togglePause() {
+        if (!gameRunning) return; // Tidak bisa di-pause kalau game over/belum mulai
+        isPaused = !isPaused;
+        
+        if (isPaused) {
+            if (audioCtx) audioCtx.suspend(); // Hentikan musik
+            document.getElementById('pause-screen').classList.remove('hidden');
+        } else {
+            if (audioCtx) {
+                audioCtx.resume();
+                nextNoteTime = audioCtx.currentTime + 0.1; // Sinkronisasi ulang nada
+            }
+            document.getElementById('pause-screen').classList.add('hidden');
+            animate(); // Lanjutkan loop render
+        }
+    }
+
+    function exitGame() {
+        gameRunning = false;
+        isPaused = false;
+        if (audioCtx) audioCtx.suspend(); // Hentikan musik
+        document.getElementById('pause-screen').classList.add('hidden');
+        document.getElementById('main-menu').classList.remove('hidden');
+        drawBackground(); // Render ulang background statis
+    }
+
     // --- EVENT LISTENERS ---
+    document.getElementById('btn-pause').addEventListener('click', togglePause);
+    document.getElementById('resume-btn').addEventListener('click', togglePause);
+    document.getElementById('btn-exit').addEventListener('click', exitGame);
+    document.getElementById('quit-btn').addEventListener('click', exitGame);
+
     document.querySelectorAll('.world-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             enterFullscreenOnStart(); 
