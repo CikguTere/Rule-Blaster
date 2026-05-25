@@ -232,12 +232,12 @@
     let nextNoteTime = 0;
     let noteIndex = 0;
 
-    // Track Musik Latar 8-bit Klasik (Melodi petualangan santai & Bass Triangle)
+    // Track Musik Latar 8-Bit Runner (Terinspirasi tema klasik Mario)
     const bgmTrack = [
-        [72, 48], [0,  48], [76, 55], [0,  55], [79, 60], [79, 60], [76, 55], [0,  55],
-        [77, 53], [0,  53], [81, 57], [0,  57], [84, 60], [84, 60], [81, 57], [0,  57],
-        [79, 55], [79, 55], [77, 53], [77, 53], [76, 52], [76, 52], [74, 50], [74, 50],
-        [72, 48], [0,  48], [72, 48], [0,  48], [72, 48], [0,  48], [0,   0], [0,   0]
+        [76, 55], [76, 55], [0,  55], [76, 55], [0,  48], [72, 48], [76, 55], [0,  55], // Teng teng, teng, teng, teng-teng teng!
+        [79, 60], [0,  60], [0,  60], [0,  60], [67, 43], [0,  43], [0,  43], [0,  43], // Teeeng! ... Dummm!
+        [72, 48], [0,  48], [0,  48], [67, 43], [0,  43], [0,  43], [64, 40], [0,  40], // Teng... dum... dum...
+        [0,  45], [69, 45], [0,  45], [71, 47], [0,  47], [70, 46], [69, 45], [0,  45]  // ... da, di, du-da!
     ];
 
     function initAudio() {
@@ -260,17 +260,36 @@
         osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + duration);
     }
 
-    function playSlashSound() {
+    function playExplosionSound() {
         if (!audioCtx) return;
-        const osc = audioCtx.createOscillator();
+        
+        // Membuat "White Noise" (suara bising statis)
+        const bufferSize = audioCtx.sampleRate * 0.4; // Durasi 0.4 detik
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1; // Nilai acak -1 hingga 1
+        }
+
+        const noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+
+        // Menggunakan Filter Lowpass untuk membuat suara noise terdengar "berat" seperti batu hancur
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1000, audioCtx.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.4);
+
+        // Mengatur Envelope volume agar mereda secara alami
         const gain = audioCtx.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(400, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+        gain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        noise.start();
     }
 
     function playLevelUpSound() {
@@ -586,7 +605,7 @@
                     e.dead = true;
                     spawnParticles(e.x + e.w/2, e.y + e.h/2, e.color, 20);
                     addScore(100, e.x, e.y);
-                    playSlashSound(); 
+                    playExplosionSound(); // Memanggil efek suara ledakan batu
                     continue;
                 }
 
@@ -597,6 +616,7 @@
                         e.dead = true;
                         spawnParticles(e.x + e.w/2, e.y + e.h/2, e.color, 20);
                         addScore(100, e.x, e.y);
+                        playExplosionSound(); // Memanggil efek suara ledakan saat diinjak
                     } else if (this.invincible === 0) {
                         lives--;
                         document.getElementById('lives-display').innerText = `NYAWA: ${lives}`;
@@ -886,16 +906,20 @@
         if (!gameRunning) return;
         frameCount++;
         
+        // --- JADWAL MUSIK LATAR (BGM) ---
         if (audioCtx) {
             if (nextNoteTime === 0) nextNoteTime = audioCtx.currentTime + 0.1;
             while (nextNoteTime < audioCtx.currentTime + 0.1) {
                 let notes = bgmTrack[noteIndex];
                 
-                if (notes[0] !== 0) playNote(notes[0], 0.12, 'square', 0.04); 
-                if (notes[1] !== 0) playNote(notes[1], 0.15, 'triangle', 0.07); 
+                // Melodi: Dibuat lebih pendek (staccato) agar terdengar lincah
+                if (notes[0] !== 0) playNote(notes[0], 0.10, 'square', 0.05); 
+                // Bass: Menggunakan triangle wave khas NES/Famicom
+                if (notes[1] !== 0) playNote(notes[1], 0.15, 'triangle', 0.08); 
                 
                 noteIndex = (noteIndex + 1) % bgmTrack.length;
-                nextNoteTime += 0.18; 
+                // Tempo dipercepat menjadi 150ms (cocok untuk berlari!)
+                nextNoteTime += 0.15; 
             }
         }
 
