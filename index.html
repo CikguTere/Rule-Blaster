@@ -74,6 +74,10 @@
             #portrait-warning { display: flex !important; }
             #game-container { display: none !important; }
         }
+        
+        /* CSS Bypass (Override jika pemain memaksakan masuk lewat tombol) */
+        body.force-landscape #portrait-warning { display: none !important; }
+        body.force-landscape #game-container { display: block !important; }
     </style>
 </head>
 <body>
@@ -81,7 +85,8 @@
 <!-- Peringatan Portrait -->
 <div id="portrait-warning">
     <h2 style="color: #f1c40f; margin-bottom: 20px; line-height: 1.5; font-size: 24px;">TOLONG PUTAR HP KAMU!</h2>
-    <p style="font-size: 12px; line-height: 1.8; color: #ecf0f1;">Game ini harus dimainkan dalam mode Mendatar (Landscape) agar semua tombol terlihat jelas.</p>
+    <p style="font-size: 12px; line-height: 1.8; color: #ecf0f1; margin-bottom: 30px;">Game ini harus dimainkan dalam mode Mendatar (Landscape) agar semua tombol terlihat jelas.</p>
+    <button id="btn-force-landscape" class="btn" style="font-size: 14px; background: #2ecc71;">PUTAR OTOMATIS & MAIN</button>
 </div>
 
 <div id="game-container">
@@ -184,7 +189,6 @@
     document.getElementById('btn-fullscreen').addEventListener('click', toggleFullscreen);
 
     function enterFullscreenOnStart() {
-        // Otomatis minta fullscreen saat tombol dunia ditekan (hanya beraksi jika belum fullscreen)
         if (!document.fullscreenElement && !document.webkitFullscreenElement) {
             let elem = document.documentElement;
             if (elem.requestFullscreen) { elem.requestFullscreen().catch(()=>{}); }
@@ -195,6 +199,13 @@
             }
         }
     }
+
+    // Tombol Paksa Masuk (Bypass Peringatan Portrait)
+    document.getElementById('btn-force-landscape').addEventListener('click', () => {
+        document.body.classList.add('force-landscape'); // Mematikan layar peringatan
+        enterFullscreenOnStart(); // Memaksa HP putar layar
+        setTimeout(handleResize, 500); // Pastikan ukuran canvas dihitung ulang
+    });
 
     // --- INPUT ---
     let keys = {};
@@ -211,7 +222,7 @@
     
     document.querySelectorAll('.touch-btn').forEach(btn => {
         btn.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // Mencegah layar ikut zoom/scroll saat disentuh
+            e.preventDefault(); 
             keys[touchMap[e.target.id]] = true;
         }, {passive: false});
         
@@ -232,12 +243,11 @@
     let nextNoteTime = 0;
     let noteIndex = 0;
 
-    // Track Musik Latar 8-Bit Runner (Terinspirasi tema klasik Mario)
     const bgmTrack = [
-        [76, 55], [76, 55], [0,  55], [76, 55], [0,  48], [72, 48], [76, 55], [0,  55], // Teng teng, teng, teng, teng-teng teng!
-        [79, 60], [0,  60], [0,  60], [0,  60], [67, 43], [0,  43], [0,  43], [0,  43], // Teeeng! ... Dummm!
-        [72, 48], [0,  48], [0,  48], [67, 43], [0,  43], [0,  43], [64, 40], [0,  40], // Teng... dum... dum...
-        [0,  45], [69, 45], [0,  45], [71, 47], [0,  47], [70, 46], [69, 45], [0,  45]  // ... da, di, du-da!
+        [76, 55], [76, 55], [0,  55], [76, 55], [0,  48], [72, 48], [76, 55], [0,  55], 
+        [79, 60], [0,  60], [0,  60], [0,  60], [67, 43], [0,  43], [0,  43], [0,  43], 
+        [72, 48], [0,  48], [0,  48], [67, 43], [0,  43], [0,  43], [64, 40], [0,  40], 
+        [0,  45], [69, 45], [0,  45], [71, 47], [0,  47], [70, 46], [69, 45], [0,  45]  
     ];
 
     function initAudio() {
@@ -262,25 +272,21 @@
 
     function playExplosionSound() {
         if (!audioCtx) return;
-        
-        // Membuat "White Noise" (suara bising statis)
-        const bufferSize = audioCtx.sampleRate * 0.4; // Durasi 0.4 detik
+        const bufferSize = audioCtx.sampleRate * 0.4; 
         const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
         const data = buffer.getChannelData(0);
         for (let i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1; // Nilai acak -1 hingga 1
+            data[i] = Math.random() * 2 - 1; 
         }
 
         const noise = audioCtx.createBufferSource();
         noise.buffer = buffer;
 
-        // Menggunakan Filter Lowpass untuk membuat suara noise terdengar "berat" seperti batu hancur
         const filter = audioCtx.createBiquadFilter();
         filter.type = 'lowpass';
         filter.frequency.setValueAtTime(1000, audioCtx.currentTime);
         filter.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.4);
 
-        // Mengatur Envelope volume agar mereda secara alami
         const gain = audioCtx.createGain();
         gain.gain.setValueAtTime(1.0, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
@@ -351,28 +357,24 @@
             
             let mainColor, topColor, borderColor;
             
-            // Tema Blok berdasarkan Level
-            if (currentLevel === 1) { // City Light
+            if (currentLevel === 1) { 
                 mainColor = '#a0522d'; topColor = '#2ecc71'; borderColor = '#5c2e16';
-            } else if (currentLevel === 2) { // Ice View
+            } else if (currentLevel === 2) { 
                 mainColor = '#34495e'; topColor = '#ecf0f1'; borderColor = '#2c3e50';
-            } else { // Volcano
+            } else { 
                 mainColor = '#2c3e50'; topColor = '#e74c3c'; borderColor = '#000000';
             }
 
-            // Gambar bata
             ctx.fillStyle = mainColor;
             ctx.fillRect(this.x - cameraX, this.y, this.w, this.h);
             ctx.strokeStyle = borderColor;
             ctx.lineWidth = 2;
             ctx.strokeRect(this.x - cameraX, this.y, this.w, this.h);
             
-            // Pola bata
             ctx.beginPath(); ctx.moveTo(this.x - cameraX, this.y + TILE/2); ctx.lineTo(this.x - cameraX + TILE, this.y + TILE/2); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(this.x - cameraX + TILE/2, this.y); ctx.lineTo(this.x - cameraX + TILE/2, this.y + TILE/2); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(this.x - cameraX + TILE/4, this.y + TILE/2); ctx.lineTo(this.x - cameraX + TILE/4, this.y + TILE); ctx.stroke();
             
-            // Lapisan atas
             ctx.fillStyle = topColor;
             ctx.fillRect(this.x - cameraX, this.y, this.w, 10);
         }
@@ -420,7 +422,7 @@
                 ctx.fillStyle = this.color;
                 ctx.beginPath(); ctx.arc(0, 0, this.w/2, 0, Math.PI*2); ctx.fill();
                 ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 6; ctx.stroke();
-                // Duri
+                
                 ctx.fillStyle = '#bdc3c7';
                 for(let i=0; i<8; i++) {
                     ctx.rotate(Math.PI/4);
@@ -432,12 +434,10 @@
                 ctx.textAlign = 'center';
                 ctx.fillText("AWAS!", 0, -this.h/2 - 25); 
             } else {
-                // Bola monster
                 ctx.fillStyle = this.color;
                 ctx.beginPath(); ctx.arc(0, 0, this.w/2, 0, Math.PI*2); ctx.fill();
                 ctx.strokeStyle = '#000'; ctx.lineWidth = 4; ctx.stroke();
                 
-                // Mata (Marah)
                 ctx.fillStyle = 'white';
                 ctx.beginPath(); ctx.ellipse(-20, -10, 15, 10, Math.PI/6, 0, Math.PI*2); ctx.fill();
                 ctx.beginPath(); ctx.ellipse(20, -10, 15, 10, -Math.PI/6, 0, Math.PI*2); ctx.fill();
@@ -445,12 +445,10 @@
                 ctx.beginPath(); ctx.arc(-20, -5, 5, 0, Math.PI*2); ctx.fill();
                 ctx.beginPath(); ctx.arc(20, -5, 5, 0, Math.PI*2); ctx.fill();
                 
-                // Alis
                 ctx.lineWidth = 4;
                 ctx.beginPath(); ctx.moveTo(-40, -25); ctx.lineTo(-10, -15); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(40, -25); ctx.lineTo(10, -15); ctx.stroke();
                 
-                // Teks Kata Negatif
                 ctx.fillStyle = '#fff';
                 ctx.font = this.word.length > 7 ? '9px "Press Start 2P"' : '11px "Press Start 2P"';
                 ctx.textAlign = 'center';
@@ -471,7 +469,6 @@
         draw() {
             if (this.collected || this.x - cameraX < -this.w || this.x - cameraX > GAME_WIDTH) return;
             
-            // Efek melayang
             this.y = this.startY + Math.sin(frameCount * 0.1) * 10;
             
             let drawX = this.x - cameraX;
@@ -481,21 +478,17 @@
             ctx.shadowBlur = 15;
             ctx.shadowColor = '#2ecc71';
             
-            // Badan botol kaca transparan
             ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
             ctx.fillRect(drawX + 10, drawY, 20, 10); 
             ctx.fillRect(drawX, drawY + 10, 40, 40); 
             
-            // Cairan Nyawa (Hijau)
             ctx.fillStyle = '#2ecc71';
             ctx.fillRect(drawX + 2, drawY + 20, 36, 28);
             
-            // Tutup Botol
             ctx.shadowBlur = 0;
             ctx.fillStyle = '#8e44ad';
             ctx.fillRect(drawX + 8, drawY - 5, 24, 5);
             
-            // Pantulan cahaya
             ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
             ctx.fillRect(drawX + 5, drawY + 15, 6, 25);
             ctx.restore();
@@ -515,19 +508,16 @@
         }
 
         update() {
-            // Kontrol Gerak
             if (keys['ArrowRight']) { this.vx = 7; this.facingRight = true; }
             else if (keys['ArrowLeft']) { this.vx = -7; this.facingRight = false; }
             else { this.vx = 0; }
 
-            // Kontrol Lompat
             if (keys['ArrowUp'] && this.onGround) {
                 this.vy = -18;
                 this.onGround = false;
                 spawnParticles(this.x + this.w/2, this.y + this.h, '#fff', 5);
             }
 
-            // Kontrol Serangan Pedang
             if (keys['KeyZ'] && this.attackTimer <= 0) {
                 this.isAttacking = true;
                 this.attackTimer = 25; 
@@ -538,12 +528,10 @@
                 if (this.attackTimer < 15) this.isAttacking = false; 
             }
 
-            // Fisika
             this.vy += 0.8;
             this.y += this.vy;
             this.onGround = false;
 
-            // Tabrakan Lantai 
             for (let b of blocksArr) {
                 if (checkCollision(this, b)) {
                     if (this.vy > 0 && this.y + this.h - this.vy <= b.y) { 
@@ -557,7 +545,6 @@
                 }
             }
 
-            // Tabrakan Dinding 
             this.x += this.vx;
             for (let b of blocksArr) {
                 if (checkCollision(this, b)) {
@@ -566,16 +553,13 @@
                 }
             }
 
-            // Cek Batas Level (Transisi ke Dunia Berikutnya)
             if (this.x > levelLength) {
                 nextLevel();
                 return;
             }
 
-            // Batas Kiri
             if (this.x < 0) this.x = 0;
 
-            // Logika Pedang (Hitbox)
             let attackHitbox = null;
             if (this.isAttacking) {
                 let reach = 80;
@@ -584,7 +568,6 @@
 
             if (this.invincible > 0) this.invincible--;
 
-            // Tabrakan Potion (Ramuan Nyawa)
             for (let p of potionsArr) {
                 if (!p.collected && checkCollision(this, p)) {
                     p.collected = true;
@@ -596,27 +579,24 @@
                 }
             }
 
-            // Tabrakan Musuh
             for (let e of enemiesArr) {
                 if (e.dead) continue;
 
-                // Cek tebasan pedang
                 if (attackHitbox && e.type !== 'giant_spike' && checkCollision(attackHitbox, e)) {
                     e.dead = true;
                     spawnParticles(e.x + e.w/2, e.y + e.h/2, e.color, 20);
                     addScore(100, e.x, e.y);
-                    playExplosionSound(); // Memanggil efek suara ledakan batu
+                    playExplosionSound(); 
                     continue;
                 }
 
-                // Cek tabrakan badan
                 if (checkCollision(this, e)) {
                     if (this.vy > 0 && this.y + this.h - this.vy < e.y + e.h/3 && e.type !== 'giant_spike') {
-                        this.vy = -15; // Bounce
+                        this.vy = -15; 
                         e.dead = true;
                         spawnParticles(e.x + e.w/2, e.y + e.h/2, e.color, 20);
                         addScore(100, e.x, e.y);
-                        playExplosionSound(); // Memanggil efek suara ledakan saat diinjak
+                        playExplosionSound(); 
                     } else if (this.invincible === 0) {
                         lives--;
                         document.getElementById('lives-display').innerText = `NYAWA: ${lives}`;
@@ -632,7 +612,6 @@
                 }
             }
 
-            // Jurang
             if (this.y > GAME_HEIGHT) {
                 lives--;
                 document.getElementById('lives-display').innerText = `NYAWA: ${lives}`;
@@ -640,7 +619,7 @@
                     gameRunning = false;
                     document.getElementById('game-over').classList.remove('hidden');
                 } else {
-                    this.x = cameraX + 300; this.y = 100; this.vy = 0; // Respawn aman
+                    this.x = cameraX + 300; this.y = 100; this.vy = 0; 
                 }
             }
         }
@@ -652,7 +631,6 @@
             
             if (this.invincible > 0 && Math.floor(frameCount / 5) % 2 === 0) ctx.globalAlpha = 0.5;
 
-            // Jubah (Cape)
             ctx.fillStyle = '#c0392b';
             ctx.beginPath();
             let capeSway = this.vx !== 0 ? Math.sin(frameCount * 0.2) * 10 : 0;
@@ -661,26 +639,21 @@
             ctx.lineTo(-10, this.h/2 - 10);
             ctx.fill();
 
-            // Badan
             ctx.fillStyle = '#2980b9'; ctx.fillRect(-15, -10, 30, 40);
             ctx.fillStyle = '#f1c40f'; ctx.fillRect(-15, 20, 30, 8); 
 
-            // Helm & Muka
             ctx.fillStyle = '#e0e0e0'; ctx.beginPath(); ctx.arc(0, -25, 20, 0, Math.PI*2); ctx.fill();
             ctx.fillStyle = 'white'; ctx.beginPath(); ctx.moveTo(-15, -35); ctx.lineTo(-35, -45); ctx.lineTo(-15, -15); ctx.fill(); 
             ctx.fillStyle = '#f39c12'; ctx.fillRect(-5, -35, 25, 20); 
             ctx.fillStyle = '#3498db'; ctx.fillRect(5, -30, 15, 8); 
 
-            // Kaki
             let legWalk = this.vx !== 0 ? Math.sin(frameCount * 0.3) * 10 : 0;
             ctx.fillStyle = '#ecf0f1';
             ctx.fillRect(-10 + legWalk, 30, 10, 15);
             ctx.fillRect(5 - legWalk, 30, 10, 15);
 
-            // Tangan
             ctx.fillStyle = '#ecf0f1'; ctx.fillRect(0, -5, 12, 12);
 
-            // PEDANG
             if (this.attackTimer > 0) {
                 ctx.save();
                 ctx.translate(5, 0); 
@@ -906,19 +879,15 @@
         if (!gameRunning) return;
         frameCount++;
         
-        // --- JADWAL MUSIK LATAR (BGM) ---
         if (audioCtx) {
             if (nextNoteTime === 0) nextNoteTime = audioCtx.currentTime + 0.1;
             while (nextNoteTime < audioCtx.currentTime + 0.1) {
                 let notes = bgmTrack[noteIndex];
                 
-                // Melodi: Dibuat lebih pendek (staccato) agar terdengar lincah
                 if (notes[0] !== 0) playNote(notes[0], 0.10, 'square', 0.05); 
-                // Bass: Menggunakan triangle wave khas NES/Famicom
                 if (notes[1] !== 0) playNote(notes[1], 0.15, 'triangle', 0.08); 
                 
                 noteIndex = (noteIndex + 1) % bgmTrack.length;
-                // Tempo dipercepat menjadi 150ms (cocok untuk berlari!)
                 nextNoteTime += 0.15; 
             }
         }
@@ -966,7 +935,7 @@
     // --- EVENT LISTENERS ---
     document.querySelectorAll('.world-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            enterFullscreenOnStart(); // Masuk ke fullscreen & landscape
+            enterFullscreenOnStart(); 
             initAudio(); 
             let selectedLevel = parseInt(e.target.getAttribute('data-level'));
             document.getElementById('main-menu').classList.add('hidden');
@@ -995,25 +964,21 @@
 
     // --- PENYESUAIAN LAYAR HP (ROTATION FIX) ---
     function handleResize() {
-        // Memastikan tinggi game pas dengan layar HP (menghindari masalah address bar)
         document.body.style.height = window.innerHeight + 'px';
         document.getElementById('game-container').style.height = window.innerHeight + 'px';
         
-        // Pancing browser untuk merender ulang kanvas setelah HP diputar
         canvas.style.display = 'none';
-        canvas.offsetHeight; // Memicu reflow
+        canvas.offsetHeight; 
         canvas.style.display = 'block';
     }
 
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', () => {
         setTimeout(handleResize, 100);
-        setTimeout(handleResize, 500); // Beri jeda untuk HP yang rotasinya agak lambat
+        setTimeout(handleResize, 500); 
     });
     
-    // Panggil saat pertama kali dimuat
     handleResize();
-
     drawBackground();
 </script>
 </body>
